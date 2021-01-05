@@ -1,0 +1,28 @@
+)ATTR Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+   _ type( input) intens(high) caps(off) just(left )
+   ` type(output) intens(high)  caps(off) just(left ) color(yellow)
+   @ type(text) intens(high) color(blue)
+   ~ type(text) intens(high) color(blue) hilite(reverse)
+)BODY
++------------------------------~TCP/IP Credits+---------------------------------
+%Command ===>_Zcmd
+
+@ The following individuals assisted, debugged, provided code, suggestions,
+@ or provided encouragement in the creation of this application:
++
+            `credit1
+            `credit2
+            `credit3
+            `credit4
+            `credit5
+            `credit6
+            `credit7
+            `credit8
+            `credit9
+            `credit10
+            `credit11
+            `credit12
+)INIT
+)PROC
+)END

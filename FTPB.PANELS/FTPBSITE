@@ -1,0 +1,44 @@
+)Attr Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+   % type( input) intens(high) caps(on ) just(left )
+   _ type( input) intens(high) caps(off) just(left )
+   ` type(text) intens(high)  caps(off) just(left ) color(yellow)
+   @ type(output) intens(high)  caps(off) just(left ) color(white)
+   ~ type(text) intens(high) color(blue) hilite(reverse)
+)Body
++------------------------~TCP/IP FTP Space Verification+------------------------
++Command ===>_zcmd
+
++ Enter/Verify for: @targdsn
++
+`DCB=
++   RECFM:         _sysrecfm`     Record Format
++   LRECL:         _syslrecl`     Logical Record Length
++   BLKSIZE:       _blk     `     Blocksize or 0 for System Determined Blksize
+`SPACE=
++   Allocation:    _sp     `       Blocks, TRK, or CYL
++   Primary:       _pri     `      Primary space allocation
++   Secondary:     _sec     `      Secondary space allocation
++   Directory:     _direct`        Directory blocks if a PDS
++   Release:       _rel`           Release (Yes or No)
++Optional:
++   Device:        %tunit   `      Target device or esoteric
++   Volser:        %tvol  `        Target volser
++   DATACLAS       %tdclas  `      Target SMS Data Class (use for PDSE)
++   MGMTCLAS       %tmclas  `      Target SMS Management Class
++   STORCLAS       %tsclas  `      Target SMS Storage Class
+)Init
+  &sp = trans(trunc(&sp,1) B,Blocks T,TRK C,CYL)
+  &rel = trans(trunc(&rel,1) Y,Yes N,No &z,Yes)
+)ReInit
+  &sp = trans(trunc(&sp,1) B,Blocks b,Blocks T,TRK t,TRK C,CYL c,CYL)
+  &rel = trans(trunc(&rel,1) Y,Yes N,No &z,Yes)
+)Proc
+  &sp = trans(trunc(&sp,1) B,Blocks b,Blocks T,TR t,TR C,CYL c,CYL *,*)
+  &rel = trans(trunc(&rel,1) Y,Yes N,No y,Yes n,No *,*)
+  Ver (&sp,nb,list,Blocks,TR,CYL)
+  Ver (&rel,nb,list,Yes,No)
+  ver (&tdclas,name)
+  ver (&tmclas,name)
+  ver (&tsclas,name)
+)End

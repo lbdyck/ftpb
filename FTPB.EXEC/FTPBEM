@@ -1,0 +1,46 @@
+  /* ---------------------  rexx procedure  ---------------------- *
+  * Name:      FTPBEM                                             *
+  *                                                               *
+  * Function:  Establish the ISPF Edit environment to be used     *
+  *            when editing the FTP Batch JCL                     *
+  *                                                               *
+  *            Internally called by FTPB via IMACRO               *
+  *                                                               *
+  * Syntax:    n/a                                                *
+  *                                                               *
+  * Author:    Lionel B. Dyck                                     *
+  *                                                               *
+  * History:                                                      *
+  *            06/28/19 - Used REXXFORM to reflow code            *
+  *            03/25/97 - add notelines                           *
+  *            11/26/96 - creation                                *
+  *                                                               *
+  * ------------------------------------------------------------- */
+
+  Address ISREDIT
+
+  "MACRO"
+
+  exit_rc = ""
+
+  "RECOVERY ON"
+  "NUMBER OFF"
+  "NULL ON"
+  "AUTOLIST OFF"
+  "PACK OFF"
+  "HEX OFF"
+  "AUTOSAVE ON"
+  "RESET"
+  "DEFINE FTPBEME MACRO CMD"
+  "DEFINE FTPBEMS MACRO CMD"
+  "DEFINE END ALIAS FTPBEME"
+  "DEFINE SAVE ALIAS FTPBEMS"
+  "LINE_Before 1     = Noteline " ,
+    "'** CAPS have been set on by default but if  **'"
+  "LINE_Before 1     = Noteline " ,
+    "'** you are editing the FTP statements then  **'"
+  "LINE_Before 1     = Noteline " ,
+    "'** you might want to change to CAPS OFF if  **'"
+  "LINE_Before 1     = Noteline " ,
+    "'** the target site is case sensitive.       **'"
+  "CAPS ON"

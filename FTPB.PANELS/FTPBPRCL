@@ -1,0 +1,18 @@
+)ATTR default(%+_)
+@ type( input) intens(high) caps(on ) just(left ) hilite(uscore) color(turq)
+` type(text) intens(high) caps(off) just(asis ) color(yellow)
+~ type(text) intens(high) caps(off) just(asis ) color(turq)
+% type(text) intens(high)
+# type(text) intens(high) color(turq) hilite(reverse)
+)BODY WINDOW(57,10)
+       #Multiple Data Set Transfer Prompt+
+%Command ===>_ZCMD
+
+ `The next panel is an ISPF 3.4 like panel from which
+ `you should issue an HRECALL command for any data sets
+ `which have a volser of%MIGRAT`otherwise these will
+ `not be included in the transfer.
+
+ `Press PF3 (END) to continue
+)INIT
+)END

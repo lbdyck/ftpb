@@ -1,0 +1,42 @@
+)Attr Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   @ type(text) intens(high) caps(off) just(left )
+   $ type( input) intens(high) caps(off) just(left ) hilite(uscore)
+   ` type( input) intens(high) caps(off) just(left) color(yellow)
+   # type( input) intens(high) caps(off) just(left) color(blue)
+   % type(text) intens(high)
+   ~ type(text) intens(high) color(yellow)
+)Body
++-------------------------~FTP Remote Hostname Update+--------------------------
+%Command:%===>_zcmd
++
++  Hostname:     `targhost
++  Port:         `targport+    Default 21
++  TLS:          `targtls+     Yes or No
++  Description:  #thdesc                          +
+
+  @Review/Update Remote Job Card information:
+
++===> _rj1                                                                    +
++===> _rj2                                                                    +
++===> _rj3                                                                    +
++===> _rj4                                                                    +
+)INIT
+if (&thdesc = &z)
+   .CURSOR = thdesc
+if (&thdesc NE &z)
+   .CURSOR = rj1
+&targtls = trans(trunc(&targtls,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
+if (&rj1 = &z)
+    &rj1 = //*
+if (&rj2 = &z)
+    &rj2 = //*
+if (&rj3 = &z)
+    &rj3 = //*
+if (&rj4 = &z)
+    &rj4 = //*
+)PROC
+ &targtls = trans(trunc(&targtls,1),Y,Yes,y,Yes,N,No,n,No)
+ ver (&targtls,nb,list,Yes,No)
+)END

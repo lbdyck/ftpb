@@ -1,0 +1,47 @@
+)ATTR Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+   _ type( input) intens(high) caps(off) just(left )
+   $ type( input) intens(high) caps(on) just(left )
+   ` type(output) intens(high)  caps(off) just(left ) color(yellow)
+   % type(text) intens(high)
+   ~ type(text) intens(high) color(blue) hilite(reverse)
+)BODY
++------------------------~TCP/IP FTP DFSMSdss Prompt+---------------------------
+%Command ===>_Zcmd
+
++   DFSMSdss (ADRDSSU) will be used to unload the selected data set(s) for
++   transfer using FTP and used there for the reload.
++
++   Remote Work Data Set HLQ%===>$whlq                         + Target Node
++                                                                optional
++   DFSMSdss options:
++
++   Exclusive use of data set(s) during unload:       %===>_vex+  Yes or No
++
++   Dump All data or only Used data                   %===>_val + All or Used
++
++   Optional Restore Options:
++      Replace Data Set                               %===>_vrp+  Yes or No
++      Volser                                         %===>$odyvol+
++      Management Class, blank, or NONE               %===>$odymc   +
++      Storage Class, blank, or NONE                  %===>$odysc   +
++      Tolerate ENQ Failure on Restore                %===>$otenq   +Yes or No
++
+)INIT
+ .cursor = whlq
+ .help = FTPBPH0
+ &vex = trans(trunc(&vex,1) &z,No Y,Yes N,No y,Yes n,No)
+ &val = trans(trunc(&val,1) &z,Used A,All U,Used a,All u,Used)
+ &vrp = trans(trunc(&vrp,1) &z,Yes Y,Yes N,No y,Yes n,No)
+ &otenq = trans(trunc(&otenq,1) &z,No Y,Yes N,No y,Yes n,No)
+)PROC
+ ver (&whlq,dsname)
+ &vex = trans(trunc(&vex,1) Y,Yes N,No y,Yes n,No *,*)
+ ver (&vex,nb,list,Yes,No)
+ &val = trans(trunc(&val,1) A,All U,Used a,All u,Used)
+ ver (&val,nb,list,All,Used)
+ &vrp = trans(trunc(&vrp,1) Y,Yes N,No y,Yes n,No *,*)
+ ver (&vrp,nb,list,Yes,No)
+ &otenq = trans(trunc(&otenq,1) Y,Yes N,No y,Yes n,No)
+ ver (&otenq,nb,list,Yes,No)
+)END

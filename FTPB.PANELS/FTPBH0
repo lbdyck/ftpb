@@ -1,0 +1,31 @@
+)Panel Keylist(ISPHelp,ISP)
+)ATTR Default(%+_)
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   @ type( input) intens(high) caps(on ) just(left ) hilite(uscore) color(turq)
+   ! type(output) intens(high) caps(off) just(asis ) color(white)
+   ` type(text) intens(high) caps(off) just(asis ) color(yellow)
+   ~ type(text) intens(high) caps(off) just(asis ) color(turq)
+   % type(text) intens(high)
+   + type(text  ) intens(low )
+     skip(on)
+)BODY
++------------------------%TCP/IP Batch FTP Tutorial+----------------------------
+%Command ===>_zcmd
+%
++ This ISPF Dialog is designed to simplify the use of IBM's TCP/IP File
++ Transfer Protocol (FTP) for transferring files from the current z/OS
++ system to another TCP/IP enabled system.  Press~ENTER+to continue to
++ the next tutorial panel.
++
++ Field level help is available on the primary FTPB Panel by moving the
++ cursor to the field in question and pressing PF1 (HELP).
++
++ To move up and down in this tutorial use the Left (F10) and Right (F11)
++ program function keys.
++
+)INIT
+  .cursor = zcmd
+  &zcont = ftpbhf1
+  &zup   = ftpbh0
+)PROC
+)END

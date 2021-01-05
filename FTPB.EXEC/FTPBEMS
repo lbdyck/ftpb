@@ -1,0 +1,19 @@
+  /*  Rexx ISPF Edit Macro                                       */
+
+  /* ----------------------------------------------------------- */
+  /*                                                             */
+  /*  This ISPF Edit Macro is used as an Alias for the ISPF EDIT */
+  /*  'SAVE' command by the FTPB exec.                           */
+  /*                                                             */
+  /* ----------------------------------------------------------- */
+  Address ISREDIT
+  "MACRO (PARM) NOPROCESS"
+
+  "DEFINE END RESET"     /* reset END back to normal */
+  "DEFINE SAVE RESET  "  /* reset SAVE back to normal */
+
+  "(num) = NUM"
+  if num = "ON" then "UNNUM"
+
+  "SAVE"
+  "END"

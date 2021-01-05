@@ -1,0 +1,23 @@
+)ATTR Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+   _ type( input) intens(high) caps(off) just(left )
+   ` type(output) intens(high)  caps(off) just(left ) color(yellow)
+   @ type(output) intens(high)  caps(off) just(left ) color(white)
+   % type(text) intens(high)
+   ~ type(text) intens(high) color(blue) hilite(reverse)
+)BODY
++----------------------------~TCP/IP FTP Executing+-----------------------------
++
+          ~Patience+            ~Patience+                 ~Patience+
++
++    Your TCP/IP File Transfer is now in progress:
++
++    From Data Set: `sdsname
++    To Data Set:   @tdsnamex
++    At Host:       @thost
++    Using Port:    @thport
++    Using TLS:     @tls
++
++    Started at `zdate    `ztime
++
+)END

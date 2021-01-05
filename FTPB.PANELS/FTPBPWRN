@@ -1,0 +1,26 @@
+)ATTR Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+   _ type( input) intens(high) caps(off) just(left )
+   ` type(output) intens(high)  caps(off) just(left ) color(yellow)
+   % type(text) intens(high)
+   ~ type(text) intens(high) color(blue) hilite(reverse)
+)BODY
++-----------------------------~TCP/IP FTP Warning+------------------------------
+%Command ===>_Zcmd
+
+~WARNING+ ~WARNING+ ~WARNING+ ~WARNING+ ~WARNING+ ~WARNING+ ~WARNING+ ~WARNING+
++
++ The data set you are attempting to transfer is a data set that when unloaded
++ will have a DCB that can not be successfully transferred using FTP.
++
++ Your options are:
++
++    1.  Reblock the data set to a BLKSIZE less than 32756 permanently
++    2.  Reblock the data set into a temporary data set with a BLKSIZE
++        less than 32756
++    3.  Don't use the unload transfer option
++
++
+)INIT
+)PROC
+)END

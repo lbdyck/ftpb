@@ -1,0 +1,49 @@
+)ATTR Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+   _ type( input) intens(high) caps(off) just(left )
+   ` type(output) intens(high)  caps(off) just(left ) color(yellow)
+   $ type( input) intens(high) caps(on) just(left )
+   % type(text) intens(high)
+   ~ type(text) intens(high) color(blue) hilite(reverse)
+)BODY
++---------------------------~TCP/IP FTP PDS Prompt+-----------------------------
+%Command ===>_Zcmd
+
++   You are transferring a partitioned data set (PDS).
+
++   Create/Replace data set at target%===>_new+   Yes (Create) or No (Replace)
++   Delete target before FTP         %===>_dln+   Yes or No (on Create Only)
++   Unload for transfer              %===>_unl+   Yes or No
+
++   Remote High Level Qualifier %===>$whlq                     + Target Node
++                                                                optional
++
++   Create SYSUT3 for IEBCOPY Unload %===>_ut3+   Yes or No. Need for large PDS
++   e.g. //SYSUT3 DD SPACE=(CYL,(50,50)),UNIT=SYSDA
++
++   Note: ~If+you want to Re-Create the data set specify Create and Delete
++
++   You will now be prompted (unless you specified all members) to select the
++   members for transfer to:`xhost
+)INIT
+ .cursor = new
+ &new = trans(trunc(&new,1) Y,Yes N,No &z,&z)
+ &dln = trans(trunc(&dln,1) Y,Yes N,No y,Yes n,No &z,&z)
+ &unl = trans(trunc(&unl,1) Y,Yes N,No y,Yes n,No &z,Yes)
+ &ut3 = trans(trunc(&ut3,1) Y,Yes N,No y,Yes n,No &z,No)
+ &xhost = &thost
+ if (&thost = '*****')
+     &xhost = 'multiple target hostnames'
+
+)PROC
+ ver (&whlq,dsname)
+ &new = trans(trunc(&new,1) Y,Yes N,No y,Yes n,No &z,No *,*)
+ &dln = trans(trunc(&dln,1) Y,Yes N,No y,Yes n,No &z,No *,*)
+ &unl = trans(trunc(&unl,1) Y,Yes N,No y,Yes n,No *,*)
+ &ut3 = trans(trunc(&ut3,1) Y,Yes N,No y,Yes n,No *,*)
+ ver (&new,nb,list,Yes,No)
+ if  (&new = Yes)
+     ver (&dln,list,Yes,No,&z)
+ ver (&unl,nb,list,Yes,No)
+ ver (&ut3,nb,list,Yes,No)
+)END

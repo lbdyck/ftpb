@@ -1,0 +1,80 @@
+)Panel Keylist(ISPHelp,ISP)
+)ATTR Default(%+_)
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   @ type( input) intens(high) caps(on ) just(left ) hilite(uscore) color(turq)
+   ! type(output) intens(high) caps(off) just(asis ) color(white)
+   ` type(text) intens(high) caps(off) just(asis ) color(yellow)
+   ~ type(text) intens(high) caps(off) just(asis ) color(turq)
+   % type(text) intens(high)
+   + type(text  ) intens(low )
+     skip(on)
+   # area(SCRL) Extend(ON)
+)BODY
++-----------------%TCP/IP Batch FTP DFSMSdss Prompt Tutorial+-------------------
+%Command ===>_zcmd
+%
++                                                               %Up F10 Dn F11
+#help -------------------------------------------------------------------------#
+)Area Help
+~ This panel is used to prompt the user when a selected transfer has
+~ been analyzed and determined that DFSMSdss should be used.
+~
+~ The information that you will be prompted to provide is:
+~
+% Remote Work Data Set HLQ:+
+~ Defines a high level qualifier to be used for the work data sets at
+~ the remote site. The default is the userid.
+~
+% Exclusive use of data set(s) during unload:+
+~
+~%Yes~means that during the unload you require exclusive use of the
+~ data set(s).  No other batch or online job/user will be allowed to
+~ use it while your transfer unload is running.  Nor will your job run
+~ until it can gain exclusive access.
+~
+~%No~means that you don't require exclusive ownership of the
+~ data set(s) and is the suggested value.
+~
+% Dump All data or only Used data
+~
+%All~will dump all allocated data for the specified data sets
+~
+%Used~will only dump the used space.
+~
+% Optional Restore Options~are provided in case you need them.
+~
+%    Replace
+~
+    ~%Yes~means that if the data set exists at the target site already that
+    ~ you want to replace it with this transfer
+    ~
+    ~%No~means that if the data set already exists to leave it alone and
+    ~ not to replace it.
+~
+%    Volser
+~
+~    If you want to restore the data set(s) to a specific volume enter
+~    that volser here.
+~
+%    Management Class, blank, or NONE
+~
+~    If you want to override the existing SMS Management Class or have
+~    the existing class ignored specify it here.  A class name will
+~    cause that new Management class to be used during the restore.
+~    NONE may be coded to indicate no Management class is to be used.
+~
+%    Storage Class, blank, or NONE
+~
+~    If you want to override the existing SMS Storage Class or have
+~    the existing class ignored specify it here.  A class name will
+~    cause that new Storage class to be used during the restore.  NONE
+~    may be coded to indicate no Storage class is to be used.
+~
+%    Tolerate ENQ Failure on Restore
+~
+~    If Yes then an ENQ failure on the Restore will be allowed.
+~
+)INIT
+  .cursor = zcmd
+)PROC
+)END

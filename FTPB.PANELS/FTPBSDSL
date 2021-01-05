@@ -1,0 +1,32 @@
+)Attr Default(%+_)
+/* % type(text  ) intens(high)              Defaults displayed for */
+/* + type(text  ) intens(low )                   information only  */
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   ! type( input) intens(high) caps(on ) just(left ) hilite(uscore)
+   ^ type( input) intens(low ) caps(off) just(asis )
+   @ type( input) intens(low ) caps(off) just(right)
+   ~ type(text) intens(high) color(blue) hilite(reverse)
+   ` type(text) intens(high) color(red)
+)Body  Expand(//)
+%-/-/- ~FTP Dataset Selection+ -/-/-
+%Command ===>_zcmd                                 / /%Scroll ===>_amt +
+%
++Command Options:`Find+or`Refresh+to refresh the list or`Cancel+
++Selection Options:`S+Select`U+Unselect`E+Exclude or`R+Recall and`M+Migrate
++No selection will transfer all non-MIGRAT datasets.
++
+%Sel  Action  Dataset                                        Dsorg Size  Volume
++
+)Model
+!z+  ^z      ^z                                             ^z    @z   +^z
+)Init
+  .ZVARS = '(zsel action cmdsn zdldsorg zdlsize zdlvol)'
+  &amt = csr
+  .help = ftpbsdsh
+)Reinit
+ .cursor = zcmd
+)Proc
+if (&zsel = _)
+    &zsel = &z
+ver (&zsel,list,S,U,\,E,R,M,&z)
+)End

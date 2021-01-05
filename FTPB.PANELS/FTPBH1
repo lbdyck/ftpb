@@ -1,0 +1,62 @@
+)Panel Keylist(ISPHelp,ISP)
+)ATTR Default(%+_)
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   @ type( input) intens(high) caps(on ) just(left ) hilite(uscore) color(turq)
+   ! type(output) intens(high) caps(off) just(asis ) color(white)
+   ` type(text) intens(high) caps(off) just(asis ) color(yellow)
+   ~ type(text) intens(high) caps(off) just(asis ) color(turq)
+   % type(text) intens(high)
+   + type(text  ) intens(low )
+     skip(on)
+   # area(SCRL) Extend(ON)
+)BODY
++---------------%TCP/IP Batch FTP Submit or Exexution Tutorial+-----------------
+%Command ===>_zcmd
+%
++                                                               %Up F10 Dn F11
+#help -------------------------------------------------------------------------#
+)Area Help
+~ This portion of the TCP/IP FTP Dialog allows you to review (Browse),
+~ update (Edit), submit JCL for batch execution (Submit), and execute
+~ the file transfer in the foreground (eXecute).
+~
+~ Note that in options%B~and%E~that the password will not be displayed
+~ as a security measure.  It will be included for the~S~and%X~options.
+~
+~ You have the following options on the menu:
++
+%    B -+Browse~the generated FTP job
+~
+~        This option allows you to review the generated JCL and FTP
+~        instructions.  It also provides you with a review to insure
+~        that the changes you made with option%E~are what you want.
+~
+%    E -+Edit~the generated FTP job
+~
+~        You can use this to make updates to the JCL and/or FTP commands.
+~        For example, you might want to insert additional FTP commands
+~        before or after the actual PUT instruction and this option
+~        allows you this capability.
+~
+%    S -+Submit~the generated FTP job
+~
+~        Submit will take the generated JCL and FTP instructions and
+~        submit them to the internal reader for execution in batch.
+~
+%    X -+eXecute~FTP+now, in the foreground
+~
+~        This option will invoke the file transfer immediately under
+~        your TSO/ISPF session.  The FTP messages will be displayed on
+~        your terminal (unfortunately at this time it is not possible
+~        to capture these messages to a file for archiving and/or printing
+~        so if you require that then you should use the%S~option).
+~
+~    The JOB card displayed will be used if you select option%S~ and is
+~    available for changing here.  Any changes will be remembered
+~    between sessions.  If the jobname is your userid plus one character
+~    then it will have the suffix character updated for each session.
+~
+)INIT
+  .cursor = zcmd
+)PROC
+)END

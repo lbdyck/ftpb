@@ -1,0 +1,40 @@
+)ATTR Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   @ type(output) intens(high) caps(off) just(left )
+   $ type( input) intens(high) caps(off) just(left ) hilite(uscore)
+   ` type( input) intens(non)  caps(off) just(left )
+   % type(text) intens(high)
+   ~ type(text) intens(high) color(yellow)
+)BODY
++---------------------~FTP Generalized Submit/Exec Panel+-----------------------
+%Select Processing Option:%===>_OPT
++
+%    B -~Browse+the generated FTP job
+%    E -~Edit+the generated FTP job
+%    S -~Submit+the generated FTP job
+%    X -~eXecute+FTP~now+in the foreground
++
+~    Target host: @thost
++
+%Review/Update:
++     Local Batch Job Card:
+ ===> _lj1                                                                    +
+ ===> _lj2                                                                    +
+ ===> _lj3                                                                    +
+ ===> _lj4                                                                    +
+)INIT
+ .cursor = opt
+ .help = ftpbh1
+ &opt = &z
+ if (&lj1 = &z)
+    &lj1 = //*
+ if (&lj2 = &z)
+    &lj2 = //*
+ if (&lj3 = &z)
+    &lj3 = //*
+ if (&lj4 = &z)
+    &lj4 = //*
+)PROC
+ ver (&opt,list,B,E,S,X)
+)END

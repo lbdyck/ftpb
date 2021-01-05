@@ -1,0 +1,113 @@
+  /* ---------------------  rexx procedure  ---------------------- *
+  * Name:      FTPBJOB2                                           *
+  *                                                               *
+  * Function:  Process the 'report' from the job executed         *
+  *            at the remote host and return with the highest     *
+  *            return code.                                       *
+  *                                                               *
+  * Syntax:    %ftpbjob2                                          *
+  *                                                               *
+  * Author:   J.O. Skip Robinson                                  *
+  *           Southern California Edison                          *
+  *                                                               *
+  * History:                                                      *
+  *            06/28/19 - used REXXFORM to reflow (LBD)           *
+  *            02/17/09 - test for job cancel message (eh)        *
+  *            09/04/98 - delete the rptdsn (lbd)                 *
+  *            06/24/98 - make input dsn a parm (lbd)             *
+  *            06/22/98 - correct checks for JCL error (SR)       *
+  *            06/16/98 - contributed by Skip Robinson            *
+  * ------------------------------------------------------------- */
+
+  arg rptdsn
+  if length(rptdsn) = 0 then do
+    say "Error: No dsname provided - exec terminating"
+    Exit 8
+  end
+
+  if left(rptdsn,1) <> "'" then
+  rptdsn = "'"rptdsn"'"
+
+  /* -------------------------- *
+  * Allocate report dataset    *
+  * -------------------------- */
+  "Alloc f(JOB2LIST) ds("rptdsn") shr"
+
+  /* -------------------------- *
+  * Read in job 2              *
+  * -------------------------- */
+  "EXECIO * DISKR JOB2LIST (Finis STEM J2L.)"
+
+  /* -------------------------- *
+  * Free JOB2LIST              *
+  * and delete the rptdsn      *
+  * -------------------------- */
+  "Free F(JOB2LIST)"
+  "Delete" rptdsn
+
+  /* -------------------------- *
+  * Write it out to sysout     *
+  * -------------------------- */
+  "EXECIO * DISKW REPORT   (Finis STEM J2L.)"
+
+  /* -------------------------- *
+  * setup default values       *
+  * -------------------------- */
+  /* end of sysout marker */
+  end_of_sysout = "!! END OF JES SPOOL FILE !!"
+  /* max condition code - we hope */
+  cond_max = 0
+
+  /* -------------------------- *
+  * Find end of sysout record  *
+  * -------------------------- */
+  DO jx = 1 TO j2l.0 UNTIL POS(end_of_sysout,j2l.jx) > 0; END
+
+  /* -------------------------- *
+  * JCL Section starts here    *
+  * -------------------------- */
+  jcl_1st = jx + 1
+
+  /* -------------------------- *
+  * Look for abend message     *
+  * -------------------------- */
+  /* IEF450I jobname step - ABEND=Snnn Unnnn REASON=nnnnnnnn */
+  DO jx = 1 TO jcl_1st UNTIL POS("IEF450I",j2l.jx) > 0; END
+  IF jx < jcl_1st THEN cond_max = 4095 /* abend occurred */
+
+  /* -------------------------- *
+  * Look for Cancel message *
+  * -------------------------- */
+  /* IEF251I jobname JOB CANCELLED                     */
+  DO jx = 1 TO jcl_1st UNTIL POS("IEF251I",j2l.jx) > 0; END
+  IF jx < jcl_1st THEN cond_max = 4095 /* cancel occurred */
+
+  /* -------------------------- *
+  * Find max return code       *
+  * -------------------------- */
+  IF cond_max = 0 THEN DO
+    /* IEF452I jobname  - JOB NOT RUN - JCL ERROR */
+    DO jx = 1 TO jcl_1st UNTIL POS("IEF452I",j2l.jx) > 0; END /*  JCL? */
+    IF jx < jcl_1st THEN cond_max = 3333 /* JCL error */
+  END
+  IF cond_max = 0 THEN DO
+    /* IEF453I jobname - JOB FAILED - JCL ERROR - TIME=16.25.23 */
+    DO jx = 1 TO jcl_1st UNTIL POS("IEF453I",j2l.jx) > 0; END /* JCL? */
+    IF jx < jcl_1st THEN cond_max = 3333 /* JCL error */
+  END
+  IF cond_max = 0 THEN DO /* no other problem, get highest cond code */
+    DO jx = jcl_1st TO j2l.0 UNTIL ,
+      POS(end_of_sysout,j2l.jx) > 0; END /* loc end of JCL */
+    jobmsg_1st = jx + 1 /* job msgs start here */
+    DO jx = jobmsg_1st TO j2l.0 UNTIL ,
+      POS(end_of_sysout,j2l.jx) > 0; END /* loc end of job msgs */
+    sysprint_1st = jx + 1 /* utility sysprint starts here */
+    DO jx = jobmsg_1st TO sysprint_1st /* scan job msgs */
+      /* IEF142I jobname step - STEP WAS EXECUTED - COND CODE nnnn */
+      IF POS("IEF142I",j2l.jx) > 0 THEN DO /* got a step cond code */
+        PARSE VAR j2l.jx . " - COND CODE " cond_code .
+        IF cond_code > cond_max THEN cond_max = cond_code /* update */
+      END
+    END
+  END
+  EXIT cond_max /* this code is passed to MVS for current step */

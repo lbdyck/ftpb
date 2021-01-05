@@ -1,0 +1,52 @@
+)ATTR Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   @ type(output) intens(high) caps(off) just(left )
+   $ type( input) intens(high) caps(off) just(left ) hilite(uscore)
+   ` type( input) intens(non)  caps(off) just(left )
+   % type(text) intens(high)
+   ~ type(text) intens(high) color(yellow)
+)BODY
++-----------------------~FTP Generalized Submit Panel+--------------------------
+%Select Processing Option:%===>_OPT
++
+% B -~Browse+the generated FTP job       %E -~Edit+the generated FTP job
+% BL-~Browse+the generated Load JCL job  %EL-~Edit+the generated Load JCL job
+%                  S -~Submit+the generated FTP job
++
+~    Target host: @thost
++
+%Review/Update:                                        ~See Help for more info+
++     Local Batch Job Card:
+ ===> _lj1                                                                    +
+ ===> _lj2                                                                    +
+ ===> _lj3                                                                    +
+ ===> _lj4                                                                    +
++     Reload Batch Job Card:   ~(review the Help for important JOBName Info...+
+ ===> _rj1                                                                    +
+ ===> _rj2                                                                    +
+ ===> _rj3                                                                    +
+ ===> _rj4                                                                    +
+)INIT
+ .CURSOR = OPT
+ .help = ftpbh2
+ &OPT = &Z
+ if (&rj1 = &z)
+    &rj1 = //*
+ if (&rj2 = &z)
+    &rj2 = //*
+ if (&rj3 = &z)
+    &rj3 = //*
+ if (&rj4 = &z)
+    &rj4 = //*
+ if (&lj1 = &z)
+    &lj1 = //*
+ if (&lj2 = &z)
+    &lj2 = //*
+ if (&lj3 = &z)
+    &lj3 = //*
+ if (&lj4 = &z)
+    &lj4 = //*
+)PROC
+ VER (&OPT,LIST,B,E,S,BL,EL)
+)END

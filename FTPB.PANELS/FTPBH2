@@ -1,0 +1,89 @@
+)Panel Keylist(ISPHelp,ISP)
+)ATTR Default(%+_)
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   @ type( input) intens(high) caps(on ) just(left ) hilite(uscore) color(turq)
+   ! type(output) intens(high) caps(off) just(asis ) color(white)
+   ` type(text) intens(high) caps(off) just(asis ) color(yellow)
+   ~ type(text) intens(high) caps(off) just(asis ) color(turq)
+   % type(text) intens(high)
+   + type(text  ) intens(low )
+     skip(on)
+   # area(SCRL) Extend(ON)
+)BODY
++----------------------%TCP/IP Batch FTP Submit Tutorial+-----------------------
+%Command ===>_zcmd
+%
++                                                               %Up F10 Dn F11
+#help -------------------------------------------------------------------------#
+)Area Help
+~ This portion of the TCP/IP FTP Dialog allows you to review (Browse),
+~ update (Edit), review the reload JCL (Browse Load), update the reload
+~ JCL (Edit Load), and submit JCL for batch execution (Submit).
+~
+~ Note that the password will not be displayed as a security measure.  It
+~ will be included only for the%S~option.
+~
+~ Read the section below on where the submitted JOB's SYSOUT can be found.
+~
+~ You have the following options on the menu:
++
+%    B -+Browse~the generated FTP job
+~
+~        This option allows you to review the generated JCL and FTP
+~        instructions.  It also provides you with a review to insure
+~        that the changes you made with option%E~are what you want.
+~
+%    BL-+Browse~the generated JCL for reloading the load library
+~
+~        This option allows you to review the generated JCL and IEBCOPY
+~        instructions.  It also provides you with a review to insure that
+~        the changes you made with option%EL~are what you want.
+~
+%    E -+Edit~the generated FTP job
+~
+~        You can use this to make updates to the JCL and/or FTP commands.
+~        For example, you might want to insert additional FTP commands
+~        before or after the actual PUT instruction and this option
+~        allows you this capability.
+~
+%    EL-+Edit~the generated JCL for reloading the load library
+~
+~        This option allows you to update the generated JCL and IEBCOPY
+~        instructions.  WIth this option you can alter the JCL, for
+~        example, you could change the unit type for the allocation of the
+~        target data set.
+~
+%    S -+Submit~the generated FTP job
+~
+~        Submit will take the generated JCL and FTP instructions and
+~        submit them to the internal reader for execution in batch.
+~
+~
+~    The JOB cards displayed will be used if you select option%S~and is
+~    available for changing here.  Any changes will be remembered
+~    between sessions.  If the jobname is your userid plus one character
+~    then it will have the suffix character updated for each session.
+~    The first (top) set of JOB statements are for the JCL that will be
+~    submitted and executed on the local system to unload and transfer
+~    the data set.  The second (bottom) set of JOB statements will be
+~    submitted using FTP after the data set has been transferred and
+~    executed at the target site.
++
+` Submitted JOB's SYSOUT Information
+~
+~    The JOB that will be submitted to reload the unloaded data set will
+~    automatically be retrieved by this application and will be printed
+~    by the last generated JOB STEP.`IF~the JOB runs longer than 10 minutes
+~    then this action will not occur as the FTP JOB will only wait for 10
+~    minutes for the submitted JOB to end before the wait terminates.  You
+~    will then have to LOGON to the remote system to view the SYSOUT for
+~    the reload JOB.
+~
+   `Important:~The JOB card for the Reload Job%must~be of the format
+~   userid plus 1 character in order for its output to be retrieved
+~   to the submitting job.  The userid must be the userid used for the
+~   remote logon.
+)INIT
+  .cursor = zcmd
+)PROC
+)END

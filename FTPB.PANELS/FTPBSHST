@@ -1,0 +1,28 @@
+)Attr Default(%+_)
+/* % type(text  ) intens(high)              Defaults displayed for */
+/* + type(text  ) intens(low )                   information only  */
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   ! type( input) intens(high) caps(on ) just(left ) hilite(uscore)
+   ^ type(output) intens(low ) caps(off) just(asis )
+   # type(output) intens(high) caps(off) just(asis )
+   ~ type(text) intens(high) color(blue) hilite(reverse)
+   ` type(text) intens(high) color(red)
+)Body  Expand(//)
+%-/-/- ~FTP Target Host Selection+ -/-/-
+%Command ===>_zcmd                                 / /%Scroll ===>_amt +
+%
++Command Options:  `Find+to find a string `Sort A+or`D+by hostname
++Selection Options:`C+to clone`D+to delete`U+to update`\+to unSelect
++
+%Sel  Action  Target Hostname
++             TLS   Port   Description
++
+)Model
+!z+  ^z       ^z
++             #z   #z   #z
+)Init
+  .ZVARS = '(hsel tsel targhost targtls targport thdesc)'
+  &amt = csr
+)Reinit
+)Proc
+)End

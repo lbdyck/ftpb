@@ -1,0 +1,72 @@
+)Panel Keylist(ISPHelp,ISP)
+)Attr Default(%+_)
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   @ type( input) intens(high) caps(on ) just(left ) hilite(uscore) color(turq)
+   ! type(output) intens(high) caps(off) just(asis ) color(white)
+   ` type(text) intens(high) caps(off) just(asis ) color(yellow)
+   ~ type(text) intens(high) caps(off) just(asis ) color(turq)
+   % type(text) intens(high)
+   + type(text  ) intens(low )
+     skip(on)
+   # area(SCRL) Extend(ON)
+)Body
++-----------------%TCP/IP Batch FTP DSSMSdss Prompt Tutorial+-------------------
+%Command ===>_zcmd
+%
++                                                               %Up F10 Dn F11
+#help -------------------------------------------------------------------------#
+)Area Help
+~ This panel is used to prompt the user when a selected transfer has
+~ been analyzed and determined that DFSMSdss should be used.
+~
+~ The information that you will be prompted to provide is:
+~
+% Exclusive use of data set(s) during unload:+
+~
+~%Yes~means that during the unload you require exclusive use of the
+~ dataset(s).  No other batch or online job/user will be allowed to
+~ use it while your transfer unload is running.  Nor will your job run
+~ until it can gain exclusive access.
+~
+~%No~means that you don't require exclusive ownership of the
+~ dataset(s) and is the suggested value.
+~
+% Replace the data set(s) during reload:
+~
+~%Yes~means that if the dataset exists at the target site already that
+~ you want to replace it with this transfer
+~
+~%No~means that if the dataset already exists to leave it alone and
+~ not to replace it.
+~
+% Dump/Restore to Tape:
+~
+~%No~means that the dump and restore will use dasd (default)
+~
+~%Yes~means that you want to dump to tape and thus restore from tape
+~
+% Optional Restore Options~are provided in case you need them.
+~
+%    Volser
+~
+~    If you want to restore the dataset(s) to a specific volume enter
+~    that volser here.
+~
+%    Management Class, blank, or NONE
+~
+~    If you want to override the existing SMS Management Class or have
+~    the existing class ignored specify it here.  A class name will
+~    cause that new Management class to be used during the restore.
+~    NONE may be coded to indicate no Management class is to be used.
+~
+%    Storage Class, blank, or NONE
+~
+~    If you want to override the existing SMS Storage Class or have
+~    the existing class ignored specify it here.  A class name will
+~    cause that new Storage class to be used during the restore.  NONE
+~    may be coded to indicate no Storage class is to be used.
+~
+)Init
+  .cursor = zcmd
+)Proc
+)end

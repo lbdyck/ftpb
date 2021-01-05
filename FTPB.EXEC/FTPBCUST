@@ -1,0 +1,177 @@
+  /* -----------------------  rexx procedure  -------------------- *
+  * Name:      ftpbcust                                           *
+  *                                                               *
+  * Function:  Setup installation defaults for the FTPB ISPF      *
+  *            application.                                       *
+  *                                                               *
+  *            Called by FTPB                                     *
+  *                                                               *
+  * Syntax:    %ftpbcust                                          *
+  *                                                               *
+  * Author:    Lionel B. Dyck                                     *
+  *                                                               *
+  * History:                                                      *
+  *            06/28/19 - Used REXXFORM to reflow                 *
+  *            04/09/04 - add netrcpre option                     *
+  *            03/23/04 - add security option                     *
+  *            06/27/03 - remove execlib                          *
+  *            11/11/02 - add jc4 initialization                  *
+  *            10/31/02 - add steplib option                      *
+  *            02/21/01 - add nodsnopt if no dsn's selected       *
+  *            02/13/01 - changed dasd to 3390 from work          *
+  *            02/12/01 - add no-member option                    *
+  *            09/24/99 - add sysftpds dsn variable               *
+  *            08/12/99 - add tape variable                       *
+  *            04/29/99 - changed dasd from 3390 to work          *
+  *            04/19/99 - created                                 *
+  *                                                               *
+  * ------------------------------------------------------------- */
+
+  parse value "" with null
+
+  Address ISPEXEC
+
+  /* -------------------------- *
+  * system determined blksize  *
+  *   0 = use SDB              *
+  *   1 = use sysblksize       *
+  * -------------------------- */
+  sdb = 0
+
+  /* -------------------------- *
+  * Set VIO device name        *
+  * Set Dasd device name       *
+  * Set Tape device name       *
+  * -------------------------- */
+  vio  = "VIO"
+  dasd = "3390"
+  tape = "CART"
+
+  /* -------------------------- *
+  * Set NETRC usage            *
+  *     0 = don't use it       *
+  *     1 = use it             *
+  * -------------------------- */
+  netrc = 1
+
+  /* --------------------------------------- *
+  * Set NETRCPRE option.                    *
+  *     0 = use TSO PROFILE PREFIX + Userid *
+  *     1 = use TSO Userid                  *
+  * For the creation of the netrc data set. *
+  * --------------------------------------- */
+  netrcpre = 0
+
+  /* -------------------------- *
+  * Set NETSEC usage           *
+  *     0 = don't use it       *
+  *     RACF - for RACF        *
+  *     other for other        *
+  *       (e.g. ACF2)          *
+  * -------------------------- */
+  netsec = "RACF"
+
+  /* -------------------------- *
+  * Set SYSFTPD DD usage       *
+  *     0 = don't use it       *
+  *     1 = use it             *
+  * -------------------------- */
+  sysftpd = 0
+
+  /* -------------------------- *
+  * Set SYSFTPDS dsname to     *
+  *  the local site dsname     *
+  * -------------------------- */
+  sysftpds = "TCPIP.FTP.DATA"
+
+  /* -------------------------- *
+  * Save password in ISPF      *
+  * Profile. May violate your  *
+  * security policies.         *
+  *  0 = no save               *
+  *  1 = save                  *
+  * -------------------------- */
+  savepwd = 0
+
+  /* ------------------------------------------------------ *
+  * Firewall support.                                      *
+  *   1. At Kaiser we use userid@target-host for the       *
+  *      firewall userid prompt                            *
+  *   2. Change this for your site as necessary            *
+  *   0 = id with hostname                                 *
+  *   1 = id by itself                                     *
+  * ------------------------------------------------------ */
+  FirIDwH = 0
+
+  /* -------------------------- *
+  * Set the flag to force the  *
+  * initial remote jobname to  *
+  * be userid plus 1 char.     *
+  * -------------------------- *
+  * Y to force                 *
+  * anything else to leave     *
+  * -------------------------- */
+  forcejbn = "Y"
+
+  "Vget (zuser zacctnum)"
+
+  /* -------------------------- *
+  * setup accounting number    *
+  * if ',' then put in ()      *
+  * if '/' then fixup          *
+  * if ' ' then put in quotes  *
+  * -------------------------- */
+  Select
+    when pos(',',zacctnum) > 0 then
+    zacctnum = "("zacctnum")"
+    when pos(' ',zacctnum) > 0 then
+    zacctnum = "'"zacctnum"'"
+    when pos('/',zacctnum) > 0 then do
+      parse value zacctnum with a1 "/" a2 "/" a3
+      zacctnum = "'"a1","a2",D'"
+    end
+    otherwise nop
+  end
+
+  /* -------------------------- *
+  * Set SYSTCPD DD usage       *
+  *     0 = don't use it       *
+  *     1 = use it             *
+  * -------------------------- */
+  systcpd = 0
+
+  /* ------------------------------------------------ *
+  * Set STEPLIB DD definition or null for no STEPLIB *
+  * ------------------------------------------------ */
+  steplib = null
+
+  /* -------------------------- *
+  * Custom:                    *
+  * Set SYSTCPDS dsname to     *
+  *  the local site dsname     *
+  * -------------------------- */
+  systcpds = null
+
+  jc1 = "//"zuser"A  JOB" zacctnum",'FTP ISPF',CLASS=A,REGION=0M, "
+  jc2 = "//     MSGCLASS=X,MSGLEVEL=1,NOTIFY=&SYSUID"
+  jc3 = "//HOLD      OUTPUT JESDS=ALL,DEFAULT=Y,OUTDISP=(HOLD,HOLD)"
+  jc4 = "//*"
+
+  /* --------------------------------------------------------- *
+  * Set no-member flag.                                       *
+  * If 0 - proceed with all members                           *
+  * if 1 - error message.                                     *
+  * --------------------------------------------------------- */
+  nomemopt = 0
+
+  /* --------------------------------------------------------- *
+  * Set no-dsn flat                                           *
+  * If 0 - proceed with all data sets                         *
+  * if 1 - error message.                                     *
+  * --------------------------------------------------------- */
+  nodsnopt = 0
+
+  "Vput (sdb vio dasd netrc netsec sysftpd njenode savepwd" ,
+    "FirIDwH forcejbn jc1 jc2 jc3 tape sysftpds netrcpre" ,
+    "systcpd systcpds nomemopt nodsnopt steplib) "
+  Address TSO

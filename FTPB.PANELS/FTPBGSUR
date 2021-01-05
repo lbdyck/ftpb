@@ -1,0 +1,27 @@
+)ATTR Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+   _ type( input) intens(high) caps(off) just(left )
+   ` type(text) intens(high)  caps(off) just(left ) color(yellow)
+   @ type(output) intens(high)  caps(off) just(left ) color(blue)
+   % type(text) intens(high)
+   ~ type(text) intens(high) color(blue) hilite(reverse)
+)BODY window(67,16)
++------------~TCP/IP FTP Batch Submission Information+------------
+%Command ===>_Zcmd
+`
+` Successfully submitted JOB: @jobname
+`
+` The Batch JOB that was just submitted will transfer the unloaded
+` data set to the target host site.  After the data set is
+` transferred another Batch JOB will be submitted to Reload the
+` unloaded data sets using DFSMSdss.
+`
+` This original Batch JOB will wait for up to 10 minutes for the
+` Reload JOB to complete and if it does complete within that 10
+` minute period then it will retrieve the Reload JOBs print out.
+` If the Reload JOB does not complete within that 10 minute period
+` you will have to logon to that remote host site and review the
+` Reload JOBs print out there.
+)INIT
+)PROC
+)END

@@ -1,0 +1,32 @@
+        /* rexx */
+        Address ISPEXEC
+        call set_credits
+           "Control Display Lock"
+        do i = 1 to credit.0
+           int_credit = "credit"i" = credit.i"
+           interpret int_credit
+           call listdsi "'sys1.lpalib'" "dir"
+           "Control Display Lock"
+           "Display panel(ftpbcrdt)"
+           end
+        i = credit.0
+        int_credit = "credit"i" = credit.i"
+        interpret int_credit
+        "Display panel(ftpbcrdt)"
+        Exit
+
+        Set_Credits:
+        parse value "" with credti1 credit2 credit3 credit4 ,
+                            credti5 credit6 credit7 credit8
+          credit.1 = "L. A. Thomas"
+          credit.2 = "Eric Wolf"
+          credit.3 = "Werner Kuehne"
+          credit.4 = "Ole Knudsen"
+          credit.5 = "Skip Robinson"
+          credit.6 = "Don Farrar"
+          credit.7 = "Dave Alcock"
+          credit.8 = "Mike Theys"
+          credit.9 = "Eric Hamtiaux"
+          credit.10= "William J. Smith"
+          credit.0 = 10
+          return

@@ -1,0 +1,22 @@
+)ATTR default(%+_)
+@ type( input) intens(high) caps(on ) just(left ) hilite(uscore) color(turq)
+` type(text) intens(high) caps(off) just(asis ) color(yellow)
+~ type(text) intens(high) caps(off) just(asis ) color(turq)
+% type(text) intens(high)
+# type(text) intens(high) color(turq) hilite(reverse)
+)BODY WINDOW(62,10)
++
+`Password~ and `Verify Password+
+~
+~These input fields are`non-display~fields so that your
+~password is kept hidden and secure.  Enter the password
+~for the specified userid twice as a way to verify that
+~at least it was entered the same both times.
+~
+~Ignored if using a personal#NETRC~Data Set.
+~
+)INIT
+ &zwinttl = 'FTP Password Entry'
+ &zcont = ftpbhf13
+ &zup   = ftpbhf4
+)END

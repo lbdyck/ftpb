@@ -1,0 +1,40 @@
+)ATTR Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   @ type(output) intens(high) caps(off) just(left )
+   # type( input) intens(high) caps(off) just(left ) hilite(uscore)
+   ` type( input) intens(high) caps(off) just(left ) hilite(uscore) color(blue)
+   % type(text) intens(high)
+   ~ type(text) intens(high) color(yellow)
+)BODY
++-------------------------~FTP Remote Hostname Clone+---------------------------
+%Command:%===>_zcmd
++
++  Current Hostname: @currhost
++  New Hostname:     `targhost                                                +
++  New Port:         `targport+    Default is 21
++  TLS:              `targtls+     Yes or No
++  Host Description: #thdesc                          +
++
++  Review/Update Remote Job Card information:
++
+ ===> _rj1                                                                    +
+ ===> _rj2                                                                    +
+ ===> _rj3                                                                    +
+ ===> _rj4                                                                    +
+)INIT
+ .CURSOR = targhost
+ if (&rj1 = &z)
+    &rj1 = //*
+ if (&rj2 = &z)
+    &rj2 = //*
+ if (&rj3 = &z)
+    &rj3 = //*
+ if (&rj4 = &z)
+    &rj4 = //*
+ &targtls = trans(trunc(&targtls,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
+)PROC
+ VER (&targhost,nb)
+ &targtls = trans(trunc(&targtls,1),Y,Yes,N,No,y,Yes,n,No)
+ ver (&targtls,nb,list,Yes,No)
+)END

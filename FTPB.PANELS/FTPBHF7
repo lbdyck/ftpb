@@ -1,0 +1,25 @@
+)ATTR default(%+_)
+@ type( input) intens(high) caps(on ) just(left ) hilite(uscore) color(turq)
+` type(text) intens(high) caps(off) just(asis ) color(yellow)
+~ type(text) intens(high) caps(off) just(asis ) color(turq)
+% type(text) intens(high)
+# type(text) intens(high) color(turq) hilite(reverse)
+)BODY WINDOW(60,15)
++
+`Binary+
+~
+~If the target (remote) system is#not~a z/OS system
+~then you might want to specify`binary~if the data is
+~not text type data.  If it contains packed decimal or
+~other non-alphanumeric data it should probably be
+~sent as binary.
+~
+~Caution should be exercise when using this option as
+~the application at the remote system must be able to
+~understand the data in EBCDIC format which is the format
+~of the data on the z/OS system.
+)INIT
+ &zwinttl = 'FTP Binary Option'
+ &zcont = ftpbhf8
+ &zup   = ftpbhf6
+)END

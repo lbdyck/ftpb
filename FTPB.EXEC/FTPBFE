@@ -1,0 +1,55 @@
+/* --------------------  rexx procedure  -------------------- *
+ | Name:      ftpbfe                                          |
+ |                                                            |
+ | Function:  front-end FTPB by dynamically allocating        |
+ |            exec (via altlib) and panels (via libdef)       |
+ |                                                            |
+ | Syntax:    %ftpbfe options                                 |
+ |                                                            |
+ | Author:    Lionel B. Dyck                                  |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            05/16/17 - creation                             |
+ |                                                            |
+ * ---------------------------------------------------------- */
+
+/* ---------------------- *
+ | Get any passed options |
+ * ---------------------- */
+  arg options
+
+/* ------------------------------------ *
+ | Define the version of FTPB to access |
+ * ------------------------------------ */
+  ver = '1226'
+
+/* --------------------------------- *
+ | Dynamically activate exec library |
+ * --------------------------------- */
+  Address TSO ,
+    "Altlib Act Application(EXEC) Dataset('excutl.ftpb.v"ver".exec')"
+
+/* ------------------------------ *
+ | Dynamically access ISPF Panels |
+ * ------------------------------ */
+  Address ISPexec
+  "Libdef ISPPLIB Dataset ID('excutl.ftpb.v"ver".panels') Stack"
+
+/* ---------------------------------------------------- *
+ | Call the FTPB ISPF dialog passing any passed options |
+ | Then save the return code                            |
+ * ---------------------------------------------------- */
+  'Select Cmd(%ftpb' options')'
+  erc = rc
+
+/* ---------------------------- *
+ | Free all Dynamic allocations |
+ * ---------------------------- */
+  'Libdef ISPPLIB Dataset Uncond'
+  Address TSO
+  'Altlib Deact Application(EXEC)'
+
+/* -------- *
+ | Now exit |
+ * -------- */
+  Exit rc

@@ -1,0 +1,21 @@
+)ATTR Default(%+_)
+/* + type(text  ) intens(low )                   information only  */
+   _ type( input) intens(high) caps(off) just(left )
+   # type( input) intens(high) caps(off) just(left )
+   + type(text) intens(low) skip(on)
+   % type(text) intens(high)
+   ~ type(text) intens(high) color(blue) hilite(reverse)
+)BODY Expand(\\) window(60,10)
+%-\-\- ~FTPBatch Anonymous Password Verification% -\-\-
+%Command ===>_zcmd
++
++ Verify/Update the anonymous password below:
++
++ ===>#password
++
++ Press Enter to Continue
+)INIT
+ .cursor = zcmd
+)PROC
+ ver (&password,nb)
+)END
