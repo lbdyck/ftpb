@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.235"
+  ftpbver = "1.236"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -60,6 +60,7 @@
   *            >> OMVS Files are supported at any release         *
   *                                                               *
   * History:                                                      *
+  *            01/14/2021  - 1.236  - Remember port from panel    *
   *            01/05/2021  - 1.235  - Fix BLOCK allocation sizing *
   *            06/29/2020  - 1.234  - Don't proceed on host table *
   *                                   until > 0 entries selected  *
@@ -260,7 +261,7 @@
 
   parse value "" with null loadjcl_dsn_flag password passwvfy ,
     ddn big_load odyvol odysc odymc shost mems ,
-    loadjcl_dsn
+    loadjcl_dsn save_port
 
   Address ISPExec
   "Select Cmd(ftpbcust)"
@@ -366,12 +367,15 @@ Start:
     ftprfind = "PASSTHRU"
     "Vput ftprfind"
 
+    if save_port /= null then
+       thport = save_port
     "Display Panel(ftpb)"
     if rc > 4 then do
       if savepwd = 1 then exit
       parse value "" with password passwvfy
       exit
     end
+    save_port = thport
     if translate(sdsname) = "EGG" then do
       Address TSO "%ftpbcrdt"
       sdsname = null

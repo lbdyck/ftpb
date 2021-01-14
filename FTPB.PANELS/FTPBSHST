@@ -15,11 +15,11 @@
 +Selection Options:`C+to clone`D+to delete`U+to update`\+to unSelect
 +
 %Sel  Action  Target Hostname
-+             TLS   Port   Description
++             TLS   Port    Description
 +
 )Model
 !z+  ^z       ^z
-+             #z   #z   #z
++             #z   #z    #z
 )Init
   .ZVARS = '(hsel tsel targhost targtls targport thdesc)'
   &amt = csr
