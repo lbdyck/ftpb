@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.236"
+  ftpbver = "1.238"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -55,11 +55,11 @@
   *                                                               *
   * Requirements:                                                 *
   *                                                               *
-  *         ** OS/390 2.10 is required for HFS data set support   *
-  *            because of the use of DSINFO services.             *
-  *            >> OMVS Files are supported at any release         *
-  *                                                               *
   * History:                                                      *
+  *            01/22/2021  - 1.238  - Numerous fixes during Beta  *
+  *            01/21/2021  - 1.237  - Add NETRC management support*
+  *                                 - Clean up alloc for PDSE     *
+  *                                 - Add Remote SYNC option      *
   *            01/14/2021  - 1.236  - Remember port from panel    *
   *            01/05/2021  - 1.235  - Fix BLOCK allocation sizing *
   *            06/29/2020  - 1.234  - Don't proceed on host table *
@@ -357,6 +357,7 @@ Start:
     if submit_flag <> 1 then call clean_up_submit
     submit_flag      = null
     loadjcl_dsn_flag = null
+    zcmd = null
 
     if shost <> null then do
       thost = shost
@@ -368,33 +369,56 @@ Start:
     "Vput ftprfind"
 
     if save_port /= null then
-       thport = save_port
+    thport = save_port
     "Display Panel(ftpb)"
     if rc > 4 then do
       if savepwd = 1 then exit
       parse value "" with password passwvfy
       exit
     end
+
     save_port = thport
     if translate(sdsname) = "EGG" then do
       Address TSO "%ftpbcrdt"
       sdsname = null
     end
     else do
-      if usernrc = null then do
-         call do_it
-         end
-      else do
-         if usernrc /= null
-            then if sysdsn(usernrc) = 'OK'
-                 then call do_it
-         else do
-              zedsmsg = 'Invalid'
-              zedlmsg = 'NETRC dsn:' usernrc sysdsn(usernrc)
-              'Setmsg msg(isrz001)'
-              end
-         end
-         end
+      zedsmsg = null
+      if mvs = 'Sync' then do
+        if pos('(',sdsname) > 0 then do
+          zedsmsg = 'Invalid'
+          zedlmsg = 'A PDS member name is not allowed for Sync operations.'
+          'setmsg msg(isrz001)'
+           end
+        if pos('*',sdsname) > 0 then do
+          zedsmsg = 'Invalid'
+          zedlmsg = 'A mask is not allowed for Sync operations.'
+          'setmsg msg(isrz001)'
+           end
+        if zedsmsg = null then
+        x = listdsi(sdsname 'DIR')
+        if sysrecfm = 'U' then do
+          zedsmsg = 'Invalid'
+          zedlmsg = 'Sync is not allowed for Load Libraries.'
+          'setmsg msg(isrz001)'
+        end
+      end
+      if zedsmsg = null then do
+        if usernrc = null then do
+          call do_it
+        end
+        else do
+          if usernrc /= null
+          then if sysdsn(usernrc) = 'OK'
+          then call do_it
+          else do
+            zedsmsg = 'Invalid'
+            zedlmsg = 'NETRC dsn:' usernrc sysdsn(usernrc)
+            'Setmsg msg(isrz001)'
+          end
+        end
+      end
+    end
   end
 
   /* ---------------------------------------------------------- *
@@ -405,20 +429,20 @@ Do_It:
   if pos("/",sdsname) = 0 then
   sdsname = translate(sdsname)
   "Vput (sdsname thost userid bin mvs other other2 usernrc" ,
-        "thport fir tls firewall post) Profile"
+    "thport fir tls firewall post) Profile"
 
 /* ---------------------------------------------- *
  | Fixup the user netrc data set name for JCL use |
  * ---------------------------------------------- */
   if usernrc /= null then do
-     x = listdsi(usernrc)
-     if pos('(',usernrc) = 0
-        then usernrcl = sysdsname
-     else do
-          parse value usernrc with .'('nrcm')'.
-          usernrcl = sysdsname'('nrcm')'
-          end
-     end
+    x = listdsi(usernrc)
+    if pos('(',usernrc) = 0
+    then usernrcl = sysdsname
+    else do
+      parse value usernrc with .'('nrcm')'.
+      usernrcl = sysdsname'('nrcm')'
+    end
+  end
 
   /* -------------------------- *
   * Clear some variables       *
@@ -711,7 +735,7 @@ Do_It:
   * -------------------------- */
   tdpdse = 0
   if sysadirblk = "NO_LIM" then do
-    sysadirblk = (sysmembers / 3) + 1
+    sysadirblk = 'PDSE'
     tdpdse = 1
   end
 
@@ -763,8 +787,10 @@ Do_It:
   end
 
   balloc = "("sysalloc","sysseconds")"
-  palloc = "("sysalloc","sysseconds","sysadirblk")"
-  direct = sysadirblk
+  palloc = "("sysalloc","sysseconds")"
+  if tdpdse = 0
+  then direct = sysadirblk
+  else direct = null
   /* ---- EHA ADD HFSX ---- */
   /* modify sysdsorg (listdsi) if HFSX File */
   /* HFSX is to handle HFS files */
@@ -827,7 +853,13 @@ Do_It:
       if sysrecfm <> "U" then
       unl = "No"
       if os_lvl > 5 then unl = "No"
-      call do_members
+      if mvs = 'Sync' then do
+        call set_ftp
+        call do_local_jcl
+        call do_sync
+        return
+      end
+      else call do_members
       if mem_err = 1 then do
         zedsmsg = "*Error*"
         zedlmsg = "No members found to match specified",
@@ -1087,7 +1119,7 @@ do_local_jcl:
   ddn = "FTP"random()
   Call set_netrc
   Address TSO
-  "Alloc f("ddn") new Unit("vio") spa(1,1) tr" ,
+  "Alloc f("ddn") new Unit("vio") spa(15,15) tr" ,
     "Recfm(F b) Lrecl(80) Blksize(0) Reuse"
   "Execio * diskw" ddn "(Finis stem ftp."
   Address ISPExec
@@ -1115,6 +1147,10 @@ do_remote_jcl:
   return
 
 Do_Pds:
+  if translate(mvs) = 'SYNC' then do
+    call do_sync
+    return
+  end
   mems = members
   if do_pds_flag = 1 then return
   "Lminit Dataid(dataid) Dataset("from_dsn") Enq(Shr)"
@@ -1220,14 +1256,7 @@ Get_JobID:
   return
 
 Do_Members:
-  /* commented out as this works with pdo 9712          */
-  /* if sysrecfm = "U" then do                          */
-  /*    if sysblksize > 32759 then big_load = "Y"       */
-  /*    unl = "Yes"                                     */
-  /*    end                                             */
-
   mem_err = 0
-
   /* --------------------------------------------------------- *
   * Test for MVS transfer or not.                             *
   *                                                           *
@@ -1239,24 +1268,8 @@ Do_Members:
     new = "No"
     unl = "No"
   end
-  if mvs = "Yes" then do
-    new = null
-    dln = null
-    "Display Panel(ftpbppds)"
-    if rc > 4 then return 4
-  end
 
-  /* commented out as this works with pdo 9712          */
-  /* if unl = "Yes" then                                */
-  /*    if sysrecfm <> "U" then                         */
-  /*       if sysblksize > 32752 then do                */
-  /*          "Display Panel(ftpbpwrn)"                 */
-  /*          zedsmsg = "Error"                         */
-  /*          zedlmsg = "FTP Request cancelled because",*/
-  /*                    "of unsupported blksize"        */
-  /*          "Setmsg Msg(isrz001)"                     */
-  /*          return 4                                  */
-  /*          end                                       */
+  if mvs = 'Yes' then x = check_remote_dataset(targ_dsn)
 
   Select
     when unl = "No" then do
@@ -1280,8 +1293,8 @@ Do_Members:
             ftp.nn = "Site Pdstype=pdse"
             nn = nn + 1
           End
-          if direct > 0 then
-          direct = "Directory="direct
+          if tdpdse = 0 then direct = 'Directory='direct
+          else direct = null
           ftp.nn = "Site pri="sysalloc "sec="sysseconds ,
             direct site_sp
           if length(tunit) > 0 then ns = "Unit="tunit
@@ -1451,15 +1464,15 @@ Set_FTP:
 
   if netrc = 1 then do
     if usernrc = null then do
-    nn = nn + 1
-    ftp.nn = "//NETRC     DD  DISP=(OLD,DELETE,DELETE),"
-    nn = nn + 1
-    ftp.nn = "//          DSN="netrc_dsn
+      nn = nn + 1
+      ftp.nn = "//NETRC     DD  DISP=(OLD,DELETE,DELETE),"
+      nn = nn + 1
+      ftp.nn = "//          DSN="netrc_dsn
     end
     else do
-    nn = nn + 1
-    ftp.nn = "//NETRC     DD  DISP=SHR,DSN="usernrcl
-         end
+      nn = nn + 1
+      ftp.nn = "//NETRC     DD  DISP=SHR,DSN="usernrcl
+    end
     netrc_dd = nn
 
     if fir = 'No' then
@@ -2263,7 +2276,7 @@ Do_Pattern:
           when left(sysunits,1) = "B" then do
             zdlsize = ((56000%sysblksize)%15) + 1
             mult_space = mult_space + zdlsize
-            end
+          end
           when left(sysunits,1) = "C" then
           mult_space = mult_space + (sysalloc*15)
           when left(sysunits,1) = "T" then
@@ -2496,7 +2509,6 @@ Fix_FTP:
   * ------------------------------------------------------------- */
 Do_FTP:
   call save_remote_jobcard
-
   submit_flag = null
   do forever
     if unl = "No" then
@@ -2517,12 +2529,7 @@ Do_FTP:
       end
       return
     end
-    rwlj = 0
     rwrj = 0
-    if ftp.1 <> lj1 then rwlj = 1
-    if ftp.2 <> lj2 then rwlj = 1
-    if ftp.3 <> lj3 then rwlj = 1
-    if ftp.4 <> lj4 then rwlj = 1
     if lj3   = null then lj3 = "//*  "
     if lj4   = null then lj4 = "//*  "
     ftp.1 = lj1
@@ -2543,8 +2550,8 @@ Do_FTP:
     call do_local_jcl
     "Vput (lj1 lj2 lj3 lj4) Profile"
     call save_remote_jobcard
-    select
-      when opt = "S" then do
+    Select
+      When opt = "S" then do
         submit_flag = 1
         Address TSO
         "Alloc f(I"ddn") Sysout(A) Writer(INTRDR)",
@@ -2809,7 +2816,8 @@ Get_Hostname:
   last_find = 0
   do forever
     hsel = null
-    if words(mhst) > 0 then do
+    if words(mhst) > 0 then
+    if zedsmsg = null then do
       zedsmsg = null
       zedlmsg = "Selections made  - enter PF3(END) or ENTER",
         "when ready to proceed."
@@ -2830,14 +2838,12 @@ Get_Hostname:
     xrc = rc
     mult_sels = ztdsels
     if ztdsels = 0
-       then if words(mhst) > 0 then xrc = 8
+    then if words(mhst) > 0 then xrc = 8
     if xrc > 7 then do
       call save_thost_table
       if words(mhst) > 0 then return
       signal start
     end
-    if ztdsels > 0 then do
-    "TBGet thosttbl"
     Select
       when abbrev("SORT",word(zcmd,1),1) = 1 then do
         if left(word(zcmd,2),1) = 'A'
@@ -2851,68 +2857,92 @@ Get_Hostname:
         targhost = "?"
         xrc = 0
       end
+      when zcmd = "NETRC" then do
+        if usernrc /= null then do
+          if sysvar('syspref') = null
+          then usernrc = 'NETRC'
+          else usernrc = "'"sysvar('sysuid')".NETRC'"
+        end
+        'vput (usernrc) profile'
+        x = ftpbnrc(usernrc)
+      end
       when abbrev("RFIND",word(zcmd,1),2) = 1 then do
         zcmd = "RFIND" argument
         call do_find "thosttbl"
         targhost = "?"
         xrc = 0
       end
-      when hsel = "D" then do
-        "TBDelete thosttbl"
-        xrc = 0
-      end
-      when hsel = "C" then do
-        currhost = targhost
-        targhost = strip(targhost)
-        "control display save"
-        "Display Panel(FTPBCHST)"
-        if rc = 0 then do
-          tsel = "Clone"
-          if targhost /= null then
-          "TBAdd thosttbl order save(targport targtls)"
+      Otherwise nop
+    end
+    if ztdsels > 0 then do
+      "TBGet thosttbl"
+      Select
+        when hsel = "D" then do
+          "TBDelete thosttbl"
+          xrc = 0
         end
-        "control display restore"
-      end
-      when hsel = "U" then do
-        "control display save"
-        "Display Panel(FTPBUHST)"
-        if rc = 0 then do
-          tsel = "Update"
-          "TBMod thosttbl save(targport targtls)"
+        when hsel = "C" then do
+          currhost = targhost
+          targhost = strip(targhost)
+          "control display save"
+          "Display Panel(FTPBCHST)"
+          if rc = 0 then do
+            tsel = "Clone"
+            if targhost /= null then
+            "TBAdd thosttbl order save(targport targtls)"
+          end
+          "control display restore"
         end
-        "control display restore"
-      end
-      when hsel = "\" then do
-        do iht = 1 to words(mhst)
-          mhstw = word(mhst,iht)
-          if pos(targhost,mhst) = 0 then iterate
-          pw = iht
-          leave
+        when hsel = "U" then do
+          "control display save"
+          "Display Panel(FTPBUHST)"
+          if rc = 0 then do
+            tsel = "Update"
+            "TBMod thosttbl save(targport targtls)"
+          end
+          "control display restore"
         end
-        if pw > 0 then do
-          mhst = delword(mhst,pw,1)
-          tsel = null
-          "TBMod thosttbl save(targport targtls)"
+        when hsel = "\" then do
+          do iht = 1 to words(mhst)
+            mhstw = word(mhst,iht)
+            if pos(targhost,mhst) = 0 then iterate
+            pw = iht
+            leave
+          end
+          if pw > 0 then do
+            mhst = delword(mhst,pw,1)
+            tsel = null
+            "TBMod thosttbl save(targport targtls)"
+            targhost = "?"
+          end
+          else targhost = '?'
+          xrc = 0
+        end
+        when hsel = null then targhost = null
+        otherwise do
+          if mvs = 'Sync' then do
+            if words(mhst) = 1
+            then do
+              zedsmsg = 'Error'
+              zedlmsg = 'Only 1 Host may be selected for a Sync Operation'
+              'setmsg msg(isrz001)'
+            end
+          end
+          if zedsmsg = null then do
+            mhst = mhst targhost":"targport":"targtls
+            tsel = "Select"
+            "TBMod thosttbl save(targport targtls)"
+          end
+          if mult_sels > 0 then
           targhost = "?"
         end
-        else targhost = '?'
-        xrc = 0
       end
-      when hsel = null then targhost = null
-      otherwise do
-        mhst = mhst targhost":"targport":"targtls
-        tsel = "Select"
-        "TBMod thosttbl save(targport targtls)"
-        if mult_sels > 0 then
-        targhost = "?"
-      end
+      if pos(hsel,"CDU") > 0 then targhost = "?"
+      thost  = targhost
+      thport = targport
+      tls    = targtls
+      if thost <> "?" then leave
     end
-    if pos(hsel,"CDU") > 0 then targhost = "?"
-    thost  = targhost
-    thport = targport
-    tls    = targtls
-    if thost <> "?" then leave
-  end
   end
   call save_thost_table
   return
@@ -3001,14 +3031,14 @@ Set_Netrc:
   * --------------------- */
 Alloc_Netrc:
   if usernrc = null then do
-  netrc.1 = "MACHINE" thost "LOGIN" id "PASSWORD" pw
-  Address TSO
-  "Alloc f(netrc) new Unit("dasd") spa(1,1) tr" ,
-    "Recfm(V B)" ,
-    "Lrecl(255) Blksize(0) Reuse ds('"netrc_dsn"')"
-  "Execio * diskw netrc (Finis Stem netrc."
-  drop netrc.
-  call set_netsec
+    netrc.1 = "MACHINE" thost "LOGIN" id "PASSWORD" pw
+    Address TSO
+    "Alloc f(netrc) new Unit("dasd") spa(1,1) tr" ,
+      "Recfm(V B)" ,
+      "Lrecl(255) Blksize(0) Reuse ds('"netrc_dsn"')"
+    "Execio * diskw netrc (Finis Stem netrc."
+    drop netrc.
+    call set_netsec
   end
   else
   Address TSO "Alloc f(netrc) shr reuse ds('"usernrcl"')"
@@ -3045,15 +3075,24 @@ FTP_Site_Info:
   if sp = "Blocks" then blk = sysblksize
   pri = sysalloc
   sec = sysseconds
-  direct = sysadirblk
+  if sysadirblk = 'NO_LIM'
+  then direct = 'P'
+  else direct = sysadirblk
   targdsn = targ_dsn
   "Display Panel(FTPBSITE)"
   if direct = 0 then direct = null
-  if length(direct) > 0 then
-  sysadirblk = direct
+  if length(direct) > 0 then do
+    if direct /= 'PDSE'
+    then sysadirblk = direct
+    else sysadirblk = null
+  end
+  sysunits = sp
   sysalloc   = pri
   sysseconds = sec
   if sp <> null then site_sp = sp
+  if left(direct,1) = 'P'
+  then sp = sp 'pdstype=pdse'
+  else if direct /= null then sp = sp 'direct='direct
   select
     when sp = "Blocks" then space = "BLK"
     when sp = "TR" then space = "TRK"
@@ -3061,8 +3100,7 @@ FTP_Site_Info:
     otherwise space = sp
   end
   balloc = "("sysalloc","sysseconds")"
-  palloc = "("sysalloc","sysseconds","sysadirblk")"
-  direct = sysadirblk
+  palloc = "("sysalloc","sysseconds")"
   if rel = "Yes" then rlse = ",RLSE"
   else rlse = ""
   return
@@ -3178,4 +3216,495 @@ Do_Find:
     end
     zsel = ''
   end
+  return
+
+/* ------------------------------ *
+ | 2 line popup for notifications |
+ * ------------------------------ */
+Do_Pop2:
+  'Control Display Lock'
+  'addpop'
+  'display panel(ftpbpop2)'
+  'rempop'
+  return
+
+/* ------------------------------ *
+ | 4 line popup for notifications |
+ * ------------------------------ */
+Do_Pop4:
+  'Control Display Lock'
+  'addpop'
+  'display panel(ftpbpop4)'
+  'rempop'
+  return
+
+/* ----------------------------------- *
+ | Check if the target dataset exists? |
+ * ----------------------------------- */
+Check_Remote:
+  arg test_dsn
+  drop ftpx.
+  ftpx.1 = 'dir' test_dsn
+  ftpx.2 = 'quit'
+  ftpx.0 = 2
+  m1 = 'Checking the Remote System for'
+  m2 = 'Dataset:' test_dsn
+  call do_pop2
+  call do_ftpx
+  Address ISPExec
+  do i = 1 to out.0
+    if pos('No data sets found.',out.i) > 0 then return 1
+  end
+  return 0
+
+/* ------------------------------ *
+ | Process the FTP command online |
+ * ------------------------------ */
+Do_FTPx:
+  Address TSO
+  if usernrc /= null
+  then  'Alloc f(netrc) ds('usernrc') shr reuse'
+  else do
+    'alloc f(netrc) recfm(v b) lrecl(255) blksize(0) spa(1,1) tr reuse'
+    netrc.1 = "MACHINE" thost "LOGIN" userid "PASSWORD" password
+    netrc.0 = 1
+    'execio * diskw netrc (finis stem netrc.'
+  end
+  'Alloc f(input) spa(1,1) tr recfm(f b) lrecl(80) blksize(32720) reuse'
+  'Alloc f(output) spa(15,15) tr reuse'
+  'Execio * diskw input (finis stem ftpx.'
+  call outtrap 'pds.'
+  ftphost = thost thport
+  Address Linkmvs 'ftp ftphost'
+  call outtrap 'off'
+  'execio * diskr output (finis stem out.'
+  'free f(input output netrc)'
+  return
+
+Do_Sync:
+  lpds = sdsname
+  rpds = tdsname
+  if rpds = null then rpds = lpds
+  tdsnamex = rpds
+  call check_remote_dataset(rpds)
+  if new = 'Yes' then
+  call ftp_site_info
+  m1 = 'Getting a list of all members from both'
+  m2 = 'the local and remote systems.'
+  call do_pop2
+  call get_member_lists
+  drop pds. out.
+  call proc_member_list
+  return
+
+Check_Remote_Dataset:
+  arg test_dsn
+  new = null
+  dln = null
+  x = listdsi(lpds 'dir')
+  x = check_remote(test_dsn)
+  if x = 1 then new = 'Yes'
+  else new = 'No'
+  alloc = x
+  if new = 'Yes' then
+  "Display Panel(ftpbppds)"
+  if rc > 4 then return 4
+  return 0
+
+Get_Member_Lists:
+  mult = 1
+  ftpx.1 = 'cd' rpds
+  ftpx.2 = 'lcd' lpds
+  ftpx.3 = 'TSO %ftpbpdir' lpds
+  if new = 'No' then do
+    ftpx.4 = 'dir'
+    ftpx.5 = 'quit'
+    ftpx.0 = 5
+  end
+  else do
+    ftpx.4 = 'quit'
+    ftpx.0 = 4
+  end
+
+  call do_ftpx
+
+  drop mem.
+  mem. = null
+ /* Process remote PDS directory from FTP Log */
+  do i = 1 to out.0
+    if pos('VV.MM',out.i) > 0 then leave
+  end
+  if wordpos('VV.MM',out.i) = 3
+  then off = 2
+  else off = 1
+  i = i + 1
+  out_ic  = i
+  out_off = off
+
+  if alloc = 0 then
+  do ip = i to out.0
+    if pos('List completed',out.ip) > 0 then leave
+    member = word(out.ip,off)
+    chg_time = null
+    rsize = null
+    chg_date = word(out.ip,off+3)
+    if strip(chg_date) /= null then do
+      chg_date = left(chg_date,4)''substr(chg_date,6,2)''right(chg_date,2)
+      chg_time = word(out.ip,off+4)
+      chg_time = left(chg_time,2)''right(chg_time,2)
+      rsize    = word(out.ip,off+5)
+    end
+    mem.0 = mem.0 member
+    mem.member = chg_date chg_time rsize
+  end
+ /* Process the local PDS directory from trap */
+  ftp_table = 'FT'random(99999)
+  'tbcreate' ftp_table 'names(fmem fstate ldate ltime lsize' ,
+  'rdate rtime rsize) nowrite'
+  transfer. = null
+  transfer_count = 0
+  members = null
+  do ip = 2 to pds.0
+    member = word(pds.ip,1)
+    parse value ''  with ldate ltime rdate rtime lsize rsize
+    if wordpos(member,members) = 0 then members = members member
+    chg_time = null
+    chg_date = word(pds.ip,4)
+    if strip(chg_date) /= null then do
+       chg_time = word(pds.ip,5)
+       lsize = word(pds.ip,6)
+       end
+    if strip(chg_date) /= null then do
+      if strip(chg_date) /= null then  do
+        chg_date = left(chg_date,2)''substr(chg_date,4,2)''right(chg_date,2)
+        year = left(chg_date,2)
+   /* ------------------------------------------------------------- *
+    | Convert the PDS result 2 digit year to a 4 digit year.        |
+    | If the year is < 80 then the century is 20 otherwise it is 19 |
+    * ------------------------------------------------------------- */
+        if year < 80
+        then chg_date = '20'chg_date
+        else chg_date = '19'chg_date
+        parse value chg_time with hh':'mm
+        chg_time = right(hh+100,2)''mm
+      end
+    end
+
+    if alloc = 0 then do
+      fstate = null
+      frmem = member chg_date chg_time lsize
+      tomem = member mem.member
+      if frmem /= tomem then Select
+        when word(mem.member,1) < chg_date then fstate = 'PUT'
+        when word(mem.member,1) > chg_date then fstate = 'GET'
+        when word(mem.member,1) = chg_date
+        then select
+          when word(mem.member,2) < chg_time then fstate = 'PUT'
+          when word(mem.member,2) > chg_time then fstate = 'GET'
+          otherwise nop
+        end
+        otherwise nop
+      end
+    end
+    else do
+      fstate = 'PUT'
+      mem.member = null
+    end
+
+    fmem = member
+    ldate = chg_date
+    if chg_time /= null then
+    ltime = left(chg_time,2)''right(chg_time,2)
+    rdate = word(mem.member,1)
+    rtime = word(mem.member,2)
+    rsize = word(mem.member,3)
+    if rtime /= null then
+    rtime = left(word(mem.member,2),2)''right(word(mem.member,2),2)
+    if mult = 1 then mult = 'mult('pds.0')'
+    else mult = null
+    'tbadd' ftp_Table mult
+    if wordpos(fmem,transfer.0) = 0 then
+    transfer.0 = transfer.0 fmem
+    transfer.fmem = fstate
+    if fstate /= null then
+    transfer_count = transfer_count + 1
+  end
+  parse value '' with ldate ltime lsize
+  do ip = out_ic to out.0
+    if pos('List completed',out.ip) > 0 then leave
+    fmem = word(out.ip,off)
+    if wordpos(fmem,members) > 0 then iterate
+    rtime = null
+    rdate = word(out.ip,off+3)
+    if strip(rdate) /= null then do
+      rdate = left(rdate,4)''substr(rdate,6,2)''right(rdate,2)
+      rtime = word(out.ip,off+4)
+      rsize = word(out.ip,off+5)
+      fstate = 'GET'
+      transfer_count = transfer_count + 1
+      transfer.0 = transfer.0 fmem
+      transfer.fmem = fstate
+      'tbadd' ftp_table
+    end
+  end
+  'tbtop' ftp_table
+  return
+
+Proc_Member_List:
+  ztdsels = 0
+  ftop = 0
+  zedsmsg = null
+  zedlmsg = 'Transfer eligible members:' transfer_count
+  'setmsg msg(isrz001)'
+  do forever
+    fsel = null
+    ftpgo = null
+    if ztdsels = 0
+    then do
+      'tbtop' ftp_table
+      'tbskip' ftp_table 'number('ftop')'
+      'tbdispl' ftp_table 'panel(ftpbsmbr)'
+    end
+    else 'tbdispl' ftp_table
+    if rc > 4 then leave
+    ftop = ztdtop
+    if zcmd /= null then
+    Select
+      When abbrev('SORT',zcmd,2) = 1 then do
+        'display panel(ftpbsms)'
+        if rc = 0 then do
+          Select    /* primary sort */
+            When s1m  /= null then field = 'fmem,ch,'s1o
+            When s1s  /= null then field = 'fstate,ch,'s1o
+            When s1ld /= null then field = 'ldate,ch,'s1o
+            When s1lt /= null then field = 'ltime,ch,'s1o
+            When s1rd /= null then field = 'rdate,ch,'s1o
+            When s1rt /= null then field = 'rtime,ch,'s1o
+            Otherwise field = 'fmem,ch,a'
+          End
+          Select    /* primary sort */
+            When s2m  /= null then field = field',fmem,ch,'s2o
+            When s2s  /= null then field = field',fstate,ch,'s2o
+            When s2ld /= null then field = field',ldate,ch,'s2o
+            When s2lt /= null then field = field',ltime,ch,'s2o
+            When s2rd /= null then field = field',rdate,ch,'s2o
+            When s2rt /= null then field = field',rtime,ch,'s2o
+            Otherwise nop
+          End
+          'tbsort' ftp_table 'fields('field')'
+        End
+      end
+      When abbrev('ONLY',zcmd,4) = 1 then do
+        zcmd = null
+        'tbtop' ftp_table
+        do forever
+          'tbskip' ftp_table
+          if rc > 0 then leave
+          if fstate = null then 'tbdelete' ftp_table
+        end
+        'tbtop' ftp_table
+      end
+      When abbrev('LOCATE',word(zcmd,1),1) = 1 then do
+        fmem = word(zcmd,2)'*'
+        'tbscan' ftp_table 'arglist(fmem) position(newcrp) condlist(ge)'
+        if rc > 0 then do
+          zedsmsg = 'Not found.'
+          zedlmsg = fmem 'Not found.'
+          'setmsg msg(isrz001)'
+        end
+        else ftop = newcrp
+      end
+      when abbrev('CANCEL',zcmd,3) = 1 then do
+        'tbend' ftp_table
+        zedsmsg = 'Canceled.'
+        zedlmsg = 'FTP Sync canceled.'
+        'setmsg msg(isrz001)'
+        'tbend' ftp_table
+        return
+      end
+      when abbrev('CLEAR',zcmd,2) = 1 then do
+        'tbtop' ftp_table
+        do forever
+          'tbskip' ftp_table
+          if rc > 0 then leave
+          fstate = null
+          'tbput' ftp_table
+        end
+        transfer. = null
+        transfer_count = 0
+        'tbtop' ftp_table
+      end
+      Otherwise nop
+    end
+    if fsel /= null then
+    select
+      when fsel = 'B' then do
+        if left(lpds,1) = "'" then do
+          bpds = "'"strip(lpds,"B","'")"("fmem")'"
+        end
+        else bpds = lpds"("fmem")"
+        'control display save'
+        'Browse dataset('bpds')'
+        'control display restore'
+      end
+      when fsel = 'C' then do
+        if sysvar('syspref') = null
+        then pref = sysvar('sysuid')
+        else pref = sysvar('syspref')
+        tempds = "'"pref".zftpget.r"random(9999)".data'"
+        tempdd = 'FT'time('s')
+        Address TSO ,
+          'alloc  ds('tempds') new spa(15,15) tr like('lpds')' ,
+          'dsntype(basic) dsorg(ps) f('tempdd')'
+        ftpx.1 = 'mode b'
+        ftpx.2 = 'type e'
+        ftpx.3 = 'cd' rpds
+        ftpx.4 = 'get' fmem tempds '(Replace'
+        ftpx.5 = 'quit'
+        ftpx.0 = 5
+
+        call do_ftpx
+
+        'control display save'
+        if left(lpds,1) = "'"
+        then cplds = "'"strip(rpds,'B',"'")"("fmem")'"
+        else cplds = lpds"("fmem")"
+        'vput (tempds rpds fmem) shared'
+        'Edit dataset('cplds') macro(ftpbredt)'
+        'control display restore'
+        call outtrap 'x.'
+        address tso 'free f('tempdd') delete'
+        call outtrap 'off'
+      end
+      when fsel = 'D' then do
+        if fstate = null then
+        transfer_count = transfer_count + 1
+        fstate = 'DELETE'
+        'tbput' ftp_table
+        if wordpos(fmem,transfer.0) = 0 then
+        transfer.0 = transfer.0 fmem
+        transfer.fmem = fstate
+      end
+      when fsel = 'G' then do
+        if fstate = null then
+        transfer_count = transfer_count + 1
+        fstate = 'GET'
+        'tbput' ftp_table
+        if wordpos(fmem,transfer.0) = 0 then
+        transfer.0 = transfer.0 fmem
+        transfer.fmem = fstate
+      end
+      when fsel = 'P' then do
+        if fstate = null then
+        transfer_count = transfer_count + 1
+        fstate = 'PUT'
+        'tbput' ftp_table
+        transfer.fmem = fstate
+        if wordpos(fmem,transfer.0) = 0 then
+        transfer.0 = transfer.0 fmem
+      end
+      when fsel = 'I' then do
+        'tbdelete' ftp_table
+        transfer.fmem = fstate
+        transfer_count = transfer_count - 1
+        p = wordpos(fmem,transfer.0)
+        transfer.0 = delword(transfer.0,p,1)
+      end
+      otherwise nop
+    end
+  end
+  'tbend' ftp_table
+  if transfer_count = 0 then do
+    zedsmsg = null
+    zedlmsg = 'No members eligible for FTP.'
+    'setmsg msg(isrz001)'
+    return
+  end
+  drop ftpx.
+  ftpx.1 = 'mode b'
+  ftpx.2 = 'type e'
+  ftpc = 2
+  if new = 'Yes' then do
+    ftpc = ftpc + 1
+    allocu = left(sysunits,1)
+    allocu = pos(allocu,'BCT')
+    allocu = word('Block Cylinder Track',allocu)
+    rec = 'quote site recfm='sysrecfm 'blksize='sysblksize ,
+      'pri='sysalloc allocu
+    if sec /= null then rec = rec 'sec='sec
+    if sysadirblk = 'NO_LIM'
+    then pdsdir = 'P'
+    else pdsdir = sysadirblk
+    if pdsdir = 'P' then rec = rec 'pdstype=pdse'
+    else rec = rec 'direct='pdsdir
+    ftpx.ftpc = rec
+    if tmclas /= null then do
+      ftpc = ftpc + 1
+      rec = 'quote site mg='tmclas
+      if tunit /= null then rec = rec 'Unit='tunit
+      if tvol  /= null then rec = rec 'Vol='tvol
+      ftpx.ftpc = rec
+    end
+    ftpc = ftpc + 1
+    ftpx.ftpc = 'mkdir' rpds
+  end
+
+  ftpc = ftpc + 1
+  ftpx.ftpc = 'cd' rpds
+  ftpc = ftpc + 1
+  ftpx.ftpc = 'lcd' lpds
+
+  do i = 1 to words(transfer.0)
+    fmem = word(transfer.0,i)
+    if transfer.fmem = null then iterate
+    ftpc = ftpc + 1
+    fstate = transfer.fmem
+    if fstate = 'GET' then fmem = fmem '( Replace'
+    ftpx.ftpc = fstate fmem
+    fstate = null
+  end
+  ftpc = ftpc + 1
+  ftpx.ftpc = 'Quit'
+  ftpx.0 = ftpc
+
+  m1 = 'Processing the File Synchronization to'
+  m2 = 'Host:' thost 'Port:' thport
+  m3 = 'From' lpds
+  m4 = 'To  ' rpds
+  call do_pop4
+
+  Address TSO ,
+    "Execio * diskr" ddn "(Finis stem ftp."
+  ip = ftp.0
+  do i = 1 to ftpx.0
+    ip = ip + 1
+    ftp.ip = ftpx.i
+  end
+  ip = ip + 1
+  ftp.ip = '/*'
+  ftp.0 = ip
+
+  Address TSO ,
+    "Execio * diskw" ddn "(Finis stem ftp."
+
+  m1 = transfer_count 'members to be processed.'
+
+  call Do_FTP
+
+  return
+
+/* --------------- *
+ | Old online xfer |
+ * --------------- */
+  dd = ftp_table
+  Address TSO
+  'alloc f('dd') new spa(15,15) tr recfm(v b) lrecl(125) blksize(0)' ,
+    'dsorg(ps) reuse'
+  'execio * diskw' dd '(finis stem out.'
+  Address ISPExec
+  'lminit dataid(ddb) ddname('dd')'
+  'browse dataid('ddb')'
+  'lmfree dataid('ddb')'
+  Address TSO ,
+    'free f('dd')'
   return

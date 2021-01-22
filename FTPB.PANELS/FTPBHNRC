@@ -1,0 +1,29 @@
+)Attr
+)Body Expand(\\)
++Help \-\%z/OS NETRC Manager+\-\-+Help
+%Command ===>_zcmd   \ \%Scroll ===>_nscr
++
++The NETRC file is used by FTP when allocated to the NETRC DD to provide
++the userid and password for a defined host (hostname or IP Address) without
++forcing a prompt by the FTP client.
++
++Commands:  %Insert (I)+to Insert a new hostname record
++           %CANCEL    +to Cancel all updates and exit
++           %EDit      +to Edit the NETRC dataset
++
++Selection: %S+         Select row to review/update
++           %D+         Delete the row
++           %R+         Repeat the row and allow update
++
++The NETRC dataset should be protected using the installed Security Manager
++to prevent others from reading it since it contains both userids and passwords
++in clear text.
++
++Note that this dialog will attempt to issue the appropriate commands to
++secure the dataset but you should verify that the dataset is actually
++protected (some sites lock users from issuing some security commands).
++
+)Init
+)Proc
+ &zcont = netrch
+)End

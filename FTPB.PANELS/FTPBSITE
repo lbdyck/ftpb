@@ -3,7 +3,7 @@
    % type( input) intens(high) caps(on ) just(left )
    _ type( input) intens(high) caps(off) just(left )
    ` type(text) intens(high)  caps(off) just(left ) color(yellow)
-   @ type(output) intens(high)  caps(off) just(left ) color(white)
+   @ type(output) intens(high)  caps(on ) just(left ) color(white)
    ~ type(text) intens(high) color(blue) hilite(reverse)
 )Body
 +------------------------~TCP/IP FTP Space Verification+------------------------
@@ -19,14 +19,15 @@
 +   Allocation:    _sp     `       Blocks, TRK, or CYL
 +   Primary:       _pri     `      Primary space allocation
 +   Secondary:     _sec     `      Secondary space allocation
-+   Directory:     _direct`        Directory blocks if a PDS
-+   Release:       _rel`           Release (Yes or No)
++   Directory:     _direct`        Directory blocks
++                                  # for PDS, P for PDSE, or blank for PS
 +Optional:
 +   Device:        %tunit   `      Target device or esoteric
 +   Volser:        %tvol  `        Target volser
-+   DATACLAS       %tdclas  `      Target SMS Data Class (use for PDSE)
 +   MGMTCLAS       %tmclas  `      Target SMS Management Class
-+   STORCLAS       %tsclas  `      Target SMS Storage Class
++
++
++
 )Init
   &sp = trans(trunc(&sp,1) B,Blocks T,TRK C,CYL)
   &rel = trans(trunc(&rel,1) Y,Yes N,No &z,Yes)

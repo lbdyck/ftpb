@@ -11,8 +11,8 @@
 %-/-/- ~FTP Target Host Selection+ -/-/-
 %Command ===>_zcmd                                 / /%Scroll ===>_amt +
 %
-+Command Options:  `Find+to find a string `Sort A+or`D+by hostname
-+Selection Options:`C+to clone`D+to delete`U+to update`\+to unSelect
++Command Options:`Find+to find a string `Sort A+or`D+by hostname`Netrc+Update
++Row Options    :`C+to clone`D+to delete`U+to update`\+to unSelect
 +
 %Sel  Action  Target Hostname
 +             TLS   Port    Description

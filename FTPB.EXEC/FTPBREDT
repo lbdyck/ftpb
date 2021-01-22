@@ -1,0 +1,33 @@
+/*---------------------  rexx procedure  -------------------- *
+ | Name:      FTPBREDT                                        |
+ |                                                            |
+ | Function:  ISPF Edit Macro to Process Compare              |
+ |                                                            |
+ | Usage Notes: called by FTPB                                |
+ |                                                            |
+ | Author:    Lionel B. Dyck                                  |
+ |                                                            |
+ | History:  (most recent on top)                             |
+ |            01/21/21 LBD - creation                         |
+ |                                                            |
+ * ---------------------------------------------------------- */
+ Address ISREdit
+ 'Macro (options)'
+ Address ISPExec 'vget (tempds rpds fmem) shared'
+ 'Reset All'
+ 'Compare' tempds 'X'
+  data = left('-',72,'-')
+  'line_after 0 =  msgline (data)'
+  if left(rpds,1) = "'"
+     then remote = "'"strip(rpds,"B","'")"("fmem")'"
+     else remote = strip(rpds)"("fmem")"
+  data = '      Temp Dataset:' tempds
+  'line_after 0 =  msgline (data)'
+  data = 'Note: the temporary dataset will be deleted when Edit ends.'
+  'line_after 0 =  msgline (data)'
+  data = ' '
+  'line_after 0 =  msgline (data)'
+  data = 'Remote PDS Member:' remote
+  'line_after 0 =  msgline (data)'
+  data = 'Comparing local dataset to remote:'
+  'line_after 0 =  msgline (data)'

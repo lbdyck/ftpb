@@ -1,0 +1,13 @@
+)Attr
+ @ type(output) intens(low) caps(off)
+)Body Window(60,6)
++
++ @m1
++ @m2
++ @m3
++ @m4
++
+)Init
+ &zwinttl = 'FTPB Popup'
+)Proc
+)End

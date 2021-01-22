@@ -2,8 +2,8 @@
 /* + type(text  ) intens(low )                   information only  */
 /* _ type( input) intens(high) caps(on ) just(left )               */
    ^ type(text  ) intens(low ) skip(on)
-   @ type( input) intens(high) caps(off) just(left )
-   { type( input) intens(high) caps(on ) just(left )
+   @ type( input) intens(high) caps(off) just(left ) hilite(uscore)
+   { type( input) intens(high) caps(on ) just(left ) hilite(uscore)
    $ type( input) intens(high) caps(off) just(left ) hilite(uscore)
    ` type( input) intens(non)  caps(off) just(left ) hilite(uscore)
    % type(text) intens(high)
@@ -11,13 +11,13 @@
    # type(output) intens(high) color(blue) just(right)
 )BODY
 +-------------------------~TCP/IP FTP Dialog+--------------------------#ftpbver+
-%Command ===>_Zcmd
-
+%Command ===>_zcmd
++
 +Source Data Set%===>@sdsname                                               #s1+
 +                     member of '*' for all members if PDS or pattern x*
 +Target Information:
-+ Hostname or ? %===>@thost                                               +
-+ Host Data Set %===>@tdsname                                                 +
++ Hostname or ? %===>@thost                                                   +
++ Host Data Set %===>@tdsname                                               #s2+
 + FTP Port      %===>@thport +  Use TLS%===>@tls+
 +
 +User Information:
@@ -27,9 +27,9 @@
 +or NETRC          %===>{usernrc                                               +
 +
 +Optional Information:
-+  z/OS Target%===>@mvs+       Is the target system running z/OS?  Yes or No
-+   Binary    %===>@bin+       Yes or No (use No for z/OS to z/OS)
-+   Firewall  %===>@fir+       Address if Yes ===>@firewall
++  z/OS Target%===>@mvs +  Is the target system running z/OS?%Yes No+or%Sync
++   Binary    %===>@bin+  %Yes+or%No+(use%No+for z/OS to z/OS)
++   Firewall  %===>@fir+   Address if Yes ===>@firewall
 +   Initial   %===>$other                                                     %<
 +      cmds   %===>$other2                                                    %<
 +  Post cmd   %===>$post                                                      %<
@@ -41,12 +41,12 @@
     .cursor = zcmd
  IF (&thport EQ &Z)
     &thport = 21
- &mvs = trans(trunc(&mvs,1) &z,Yes Y,Yes N,No *,*)
+ &mvs = trans(trunc(&mvs,1) &z,Yes Y,Yes N,No S,Sync s,Sync y,Yes n,No *,*)
  &bin = trans(trunc(&bin,1) &z,No  Y,Yes N,No *,*)
  &fir = trans(trunc(&fir,1) &z,No  Y,Yes N,No *,*)
  &tls = trans(trunc(&tls,1) &z,No  Y,Yes N,No *,*)
 )PROC
-&mvs = trans(trunc(&mvs,1) &z,Yes Y,Yes N,No y,Yes n,No *,*)
+&mvs = trans(trunc(&mvs,1) &z,Yes Y,Yes N,No S,Sync s,Sync y,Yes n,No *,*)
 &bin = trans(trunc(&bin,1) &z,No  Y,Yes N,No y,Yes n,No *,*)
 &fir = trans(trunc(&fir,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
 &tls = trans(trunc(&tls,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
@@ -67,7 +67,7 @@ if (&egg NE EGG)
       if (&fir EQ Yes)
           ver (&firewall,nb)
       ver (&bin,nb,list,Yes,No)
-      ver (&mvs,nb,list,Yes,No)
+      ver (&mvs,nb,list,Yes,No,Sync)
 )Help
  Field(sdsname)  panel(ftpbhf1)
  Field(thost)    panel(ftpbhf2)
@@ -87,4 +87,5 @@ if (&egg NE EGG)
  Field(usernrc)  panel(ftpbhf13)
 )Field
  Field(sdsname)  IND(s1) LEN(256)
+ Field(tdsname)  IND(s2) LEN(256)
 )END

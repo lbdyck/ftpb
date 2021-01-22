@@ -173,5 +173,5 @@
 
   "Vput (sdb vio dasd netrc netsec sysftpd njenode savepwd" ,
     "FirIDwH forcejbn jc1 jc2 jc3 tape sysftpds netrcpre" ,
-    "systcpd systcpds nomemopt nodsnopt steplib) "
+    "systcpd systcpds nomemopt nodsnopt steplib ) "
   Address TSO

@@ -17,7 +17,8 @@
 
         Set_Credits:
         parse value "" with credti1 credit2 credit3 credit4 ,
-                            credti5 credit6 credit7 credit8
+                            credti5 credit6 credit7 credit8 ,
+                            credti9 credit10 credit11
           credit.1 = "L. A. Thomas"
           credit.2 = "Eric Wolf"
           credit.3 = "Werner Kuehne"
@@ -28,5 +29,6 @@
           credit.8 = "Mike Theys"
           credit.9 = "Eric Hamtiaux"
           credit.10= "William J. Smith"
-          credit.0 = 10
+          credit.11= "John Kalinich"
+          credit.0 = 11
           return

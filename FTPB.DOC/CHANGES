@@ -1,6 +1,17 @@
 This member (new with the 1.195 level) documents the changes from
 prior levels.
 
+01/22/2021
+1.238  - Numerous fixes during Beta
+
+01/21/2021
+1.237  - Add NETRC management support
+        - Clean up alloc for PDSE
+       - Add Remote SYNC option
+
+01/14/2021
+1.236  - Remember port from panel
+
 01/05/2021
 1.235  - Correct allocation sizing for block allocations
 

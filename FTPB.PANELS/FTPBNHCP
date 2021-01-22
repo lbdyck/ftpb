@@ -1,0 +1,11 @@
+)Attr
+)Body window(61,4)
++
++Enter/Verify the dataset name of the NETRC file to be used
++by FTP when allocated to the NETRC DD.
++
+)Init
+ &zwinttl = 'NETRC Dataset Entry Tutorial'
+ &zcont = ftpbnhcp
+)Proc
+)End

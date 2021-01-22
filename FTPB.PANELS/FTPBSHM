@@ -1,0 +1,28 @@
+)Attr
+)Body Expand(\\)
++Tutorial\-\%FTPB Member Selection+\-\Tutorial
++Command ===>_zcmd
++
++FTPB Sync compares the ISPF statistics of the Source and the Target
++Partitioned Datasets (PDS/PDSE) to present a table of all members with
++a suggested action (GET or PUT) along with the members last changed
++date and time for easy comparison.
++
++Available Commands:%Locate xx+Locate a member
++                   %Only+     Only display member with an action
++                   %Clear+    Clear all actions
++Available Options: %B+        Browse the local member
++                   %C+        Compare the local member to the remote member
++                              - remote file pulled into a temporary dataset
++                   %D+        Delete the remote member
++                   %G+        Set action to GET
++                   %I+        Ignore (remove) action
++                   %P+        Set action to PUT
++
+%Note:+Be aware of the timezone differences that may exist between the
++      local and remote sites as that will affect the comparison.
++
+)Init
+)Proc
+ &zcont = ftpbshm
+)End

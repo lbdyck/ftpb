@@ -1,0 +1,56 @@
+)Attr
+ @ Type(input ) hilite(uscore) caps(on) intens(low)
+ + type(text  ) intens(low) skip(on)
+ # Type(output) skip(on)
+)Body Window(63,10) Expand(\\)
++Select Sort Criteria: (any non-blank)
++
++Primary Sort: @z+Member @z+State @z+Local Date @z+Local Time
++              @z+Remote Date @z+Remote Time
++Primary Sort Order: @z+ A:Ascending D:Descending
++
++Secondary Sort: @z+Member @z+State @z+Local Date @z+Local Time
++                @z+Remote Date @z+Remote Time
++Secondary Sort Order: @z+ A:Ascending D:Descending
++
+)Init
+ &zwinttl = 'FTPB Sync Member Sort'
+ .zvars = '(s1m s1s s1ld s1lt s1rd s1rt s1o +
+            s2m s2s s2ld s2lt s2rd s2rt s2o)'
+)Proc
+ &resp = .resp
+*Rexx(* resp zedsmsg zedlmsg csr)
+ parse value '' with zedsmsg zedlmsg
+ if length(strip(s1m s1s s1ld s1lt s1rd s1rt)) > 1 then do
+    zedsmsg = 'Error.'
+    zedlmsg = 'Too many primary sort field selections.'
+    csr = 's1m'
+    end
+
+ if zedsmsg = '' then
+ if length(strip(s1m s1s s1ld s1lt s1rd s1rt)) = 1 then
+    if pos(s1o,'AD') = 0 then do
+    zedsmsg = 'Error.'
+    zedlmsg = 'Primary sort order is invalid:' s1o
+    csr = 's1o'
+    end
+
+ if zedsmsg = '' then
+ if length(strip(s2m s2s s2ld s2lt s2rd s2rt)) > 1 then do
+    zedsmsg = 'Error.'
+    zedlmsg = 'Too many secondary sort field selections.'
+    csr = 's2m'
+    end
+
+ if zedsmsg = '' then
+ if length(strip(s2m s2s s2ld s2lt s2rd s2rt)) = 1 then
+    if pos(s2o,'AD') = 0 then do
+    zedsmsg = 'Error.'
+    zedlmsg = 'Secondary sort order is invalid:' s2o
+    csr = 's2o'
+    end
+*EndRexx
+ if (&zedsmsg NE &Z)
+    .CURSOR = &CSR
+    .msg = isrz001
+)End

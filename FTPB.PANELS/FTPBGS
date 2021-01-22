@@ -2,6 +2,7 @@
 /* + type(text  ) intens(low )                   information only  */
 /* _ type( input) intens(high) caps(on ) just(left )               */
    @ type(output) intens(high) caps(off) just(left )
+   # type(output) intens(low ) caps(off) just(left )
    $ type( input) intens(high) caps(off) just(left ) hilite(uscore)
    ` type( input) intens(non)  caps(off) just(left )
    % type(text) intens(high)
@@ -23,6 +24,9 @@
  ===> _lj2                                                                    +
  ===> _lj3                                                                    +
  ===> _lj4                                                                    +
++
+#m1
++
 )INIT
  .cursor = opt
  .help = ftpbh1

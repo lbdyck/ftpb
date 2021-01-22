@@ -1,0 +1,20 @@
+)Attr
+ _ type(input) hilite(uscore) intens(low) caps(on)
+ # type(output) intens(low) caps(off)
+)Body Expand(\\)
++-\-\%z/OS NETRC Manager+\-\-
+%Command ===>_zcmd   \ \%Scroll ===>_nscr
++
++Commands:%I+Insert%CANCEL%EDit
++Row:%S+Review/Update%R+Repeat%D+Delete
++
++S+Host Name/Address               +Userid
+)Model
+_Z#host                            #uid
+)Init
+ &nscr = 'CSR'
+ .zvars = '(nsel)'
+ .help = ftpbhnrc
+)Proc
+ ver (&nsel,list,S,R,D)
+)End

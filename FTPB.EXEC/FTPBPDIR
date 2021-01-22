@@ -1,0 +1,104 @@
+  /* --------------------  rexx procedure  -------------------- *
+  | Name:      FTPBPDIR                                        |
+  |                                                            |
+  | Function:  The PDSDIR exec is used to display a PDS member |
+  |            list.                                           |
+  |                                                            |
+  | Syntax:    PDSDIR dsname                                   |
+  |                                                            |
+  | Author:    Janko Kalinic                                   |
+  |            The ISPF Cabal - Vive la révolution             |
+  |            the.pds.command@gmail.com                       |
+  |                                                            |
+  | History:  (most recent on top)                             |
+  |            01/21/21 - Use in FTPSYNC                       |
+  |            10/09/96 - Creation                             |
+  |                                                            |
+  * ---------------------------------------------------------- *
+  | Copyleft (C) 1996-2021 John Kalinich                       |
+  * ---------------------------------------------------------- */
+
+  arg dsn .
+  do while dsn = ''
+    say 'Enter Dsname:'
+    pull dsn
+  end
+
+  pds = 'PDS'random(9999)
+
+  Address TSO
+  "alloc f("pds") da("dsn") shr reuse",    /* pds directory */
+    "  recfm(f) dsorg(ps) lrecl(256) blksize(256)"
+
+  say ' Name                VV MM  Created     Changed     Size',
+    ' Init   Mod   ID'
+  "execio * diskr" pds "(stem dir. finis"  /* read pds directory */
+  do blk = 1 to dir.0
+    usedbytes = c2d(substr(dir.blk,1,2))
+    index = 3                            /* skip past used bytes */
+    do while index < usedbytes
+      if substr(dir.blk,index,8) = 'FFFFFFFFFFFFFFFF'x then
+      leave blk
+      pds2name = substr(dir.blk,index,8) /* member name */
+      index = index + 11                 /* skip past name and ttr */
+      pds2indc = substr(dir.blk,index,1)
+      len = bitand(pds2indc,'1F'x)       /* isolate user data length */
+      userdata = c2d(len) * 2            /* halfwords to bytes */
+      if userdata = 30 &,                /* ISPF statistics? */
+        bitand(pds2indc,'80'x) /= '80'x then  /* no alias */
+      do
+        vv = c2d(substr(dir.blk,index+1,1))
+        mm = c2d(substr(dir.blk,index+2,1))
+        crdate = date('O',p2d(substr(dir.blk,index+6,3)),'J')
+        lmdate = date('O',p2d(substr(dir.blk,index+10,3)),'J')
+        time = p2d(substr(dir.blk,index+13,3))
+        time = substr(time,1,2)||':'||substr(time,3,2)
+        size = c2d(substr(dir.blk,index+15,2))
+        init = c2d(substr(dir.blk,index+17,2))
+        mod = c2d(substr(dir.blk,index+19,2))
+        id = substr(dir.blk,index+21,8)
+        say pds2name,
+          '           ',
+          right(vv,2,0)||'.'||right(mm,2,0),
+          crdate,
+          lmdate,
+          time,
+          format(size,5),
+          format(init,5),
+          format(mod,5),
+          id
+      end
+      else
+      do
+        if bitand(pds2indc,'80'x) = '80'x then
+        say pds2name,
+          '           ',
+          'ALIAS'
+        else
+        say pds2name
+      end
+      index = index + userdata + 1       /* skip past user data */
+    end
+  end
+  'Free f('pds')'
+  exit
+
+p2d: procedure
+  parse arg number_p
+  erg = c2x(number_p)
+  sign = right(erg,1)
+  number = left(erg,length(erg)-1)
+  if sign = 'D' then
+  return '-'||number
+  else
+  return number
+
+d2p: procedure
+  arg number
+  if datatype(number) ^= 'NUM' then
+  return ''
+  if number < 0 then
+  interpret "number_p = '"abs(number)"D'x"
+  else
+  interpret "number_p = '"number"C'x"
+  return number_p

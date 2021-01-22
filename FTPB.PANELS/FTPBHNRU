@@ -1,0 +1,12 @@
+)Attr
+)Body Window(65,5)
++
++Hosts      Any valid DSN Hostname or IP Address (IPV4 or IPV6)
++Userid     The userid to be used when connecting to the host
++Password   The password to be used when connecting to the host
++
+)Init
+ &zwinttl = 'NETRC Host Record Help'
+)Proc
+ &zcont =  ftpbhnru
+)End
