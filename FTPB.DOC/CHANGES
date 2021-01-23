@@ -1,6 +1,9 @@
 This member (new with the 1.195 level) documents the changes from
 prior levels.
 
+01/23/2021  - 1.239  - Pattern matching for Sync
+                     - Only delete ignore entry after a Clear
+
 01/22/2021
 1.238  - Numerous fixes during Beta
 
