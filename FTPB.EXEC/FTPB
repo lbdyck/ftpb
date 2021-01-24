@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.240"
+  ftpbver = "1.241"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/24/2021  - 1.241  - Fix sync member selection   *
   *            01/24/2021  - 1.240  - If dataset pattern and Sync *
   *                                   error message               *
   *            01/23/2021  - 1.239  - Pattern matching for Sync   *
@@ -406,7 +407,10 @@ Start:
                 if left(sdsname,1) = "'"
                 then test_sdsname = test_sdsname"'"
                 end
-           else test_sdsname = sdsname
+           else do
+                test_sdsname = sdsname
+                sync_member = null
+                end
         x = listdsi(test_sdsname 'DIR')
         if sysrecfm = 'U' then do
           zedsmsg = 'Invalid'

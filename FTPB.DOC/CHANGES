@@ -2,6 +2,9 @@ This member (new with the 1.195 level) documents the changes from
 prior levels.
 
 01/24/2021
+1.241  - Fix if sync used with no member/member-pattern
+
+01/24/2021
 1.240  - If dataset pattern and Sync then error message
 
 01/23/2021
