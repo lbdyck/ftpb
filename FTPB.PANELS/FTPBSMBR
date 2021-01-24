@@ -3,7 +3,7 @@
  # Type(output) skip(on)
  ` Type(output) skip(on) just(right)
 )Body Expand(\\)
-+-\-\%FTPB Sync#ver +\-\-
++-\-\%FTPB Sync#ver  +\-\-
 +Command ===>_zcmd   \ \+Scroll ===>_fscr+
 +
 +Source PDS :#lpds
