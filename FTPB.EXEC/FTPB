@@ -3664,10 +3664,17 @@ Proc_Member_List:
     if tmclas /= null then do
       ftpc = ftpc + 1
       rec = 'quote site mg='tmclas
+      if tdclas /= null then rec = rec 'datac='tdclas
+      if tsclas /= null then rec = rec 'sto='tsclas
+      ftpx.ftpc = rec
+      end
+      rec = ''
       if tunit /= null then rec = rec 'Unit='tunit
       if tvol  /= null then rec = rec 'Vol='tvol
-      ftpx.ftpc = rec
-    end
+      if rec /= null then do
+        ftpc = ftpc + 1
+        ftpx.ftpc = rec
+        end
     ftpc = ftpc + 1
     ftpx.ftpc = 'mkdir' rpds
   end
