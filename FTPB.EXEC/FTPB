@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.239"
+  ftpbver = "1.240"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/24/2021  - 1.240  - If dataset pattern and Sync *
+  *                                   error message               *
   *            01/23/2021  - 1.239  - Pattern matching for Sync   *
   *                                 - Only delete ignore entry    *
   *                                   after a Clear               *
@@ -390,6 +392,13 @@ Start:
     else do
       zedsmsg = null
       if mvs = 'Sync' then do
+        if pos('*',sdsname) > 0 then
+           if pos('(',sdsname) = 0 then do
+              zedsmsg = 'Invalid'
+              zedlmsg = 'Sync is not allowed with a dataset mask.'
+              'setmsg msg(isrz001)'
+              end
+        if zedsmsg = null then do
         if pos('(',sdsname) > 0
            then do
                 p = pos('(',sdsname)
@@ -403,6 +412,7 @@ Start:
           zedsmsg = 'Invalid'
           zedlmsg = 'Sync is not allowed for Load Libraries.'
           'setmsg msg(isrz001)'
+        end
         end
       end
       if zedsmsg = null then do
