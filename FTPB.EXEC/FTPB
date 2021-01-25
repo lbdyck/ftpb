@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.242"
+  ftpbver = "1.243"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -59,6 +59,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/25/2021  - 1.243  - Prompt if specified NETRC   *
+  *                                   does not exist.             *
   *            01/25/2021  - 1.242  - Add ACF2 protection option  *
   *            01/24/2021  - 1.241  - Fix sync member selection   *
   *            01/24/2021  - 1.240  - If dataset pattern and Sync *
@@ -396,29 +398,29 @@ Start:
       zedsmsg = null
       if mvs = 'Sync' then do
         if pos('*',sdsname) > 0 then
-           if pos('(',sdsname) = 0 then do
-              zedsmsg = 'Invalid'
-              zedlmsg = 'Sync is not allowed with a dataset mask.'
-              'setmsg msg(isrz001)'
-              end
-        if zedsmsg = null then do
-        if pos('(',sdsname) > 0
-           then do
-                p = pos('(',sdsname)
-                parse value sdsname with test_sdsname'('sync_member')' .
-                if left(sdsname,1) = "'"
-                then test_sdsname = test_sdsname"'"
-                end
-           else do
-                test_sdsname = sdsname
-                sync_member = null
-                end
-        x = listdsi(test_sdsname 'DIR')
-        if sysrecfm = 'U' then do
+        if pos('(',sdsname) = 0 then do
           zedsmsg = 'Invalid'
-          zedlmsg = 'Sync is not allowed for Load Libraries.'
+          zedlmsg = 'Sync is not allowed with a dataset mask.'
           'setmsg msg(isrz001)'
         end
+        if zedsmsg = null then do
+          if pos('(',sdsname) > 0
+          then do
+            p = pos('(',sdsname)
+            parse value sdsname with test_sdsname'('sync_member')' .
+            if left(sdsname,1) = "'"
+            then test_sdsname = test_sdsname"'"
+          end
+          else do
+            test_sdsname = sdsname
+            sync_member = null
+          end
+          x = listdsi(test_sdsname 'DIR')
+          if sysrecfm = 'U' then do
+            zedsmsg = 'Invalid'
+            zedlmsg = 'Sync is not allowed for Load Libraries.'
+            'setmsg msg(isrz001)'
+          end
         end
       end
       if zedsmsg = null then do
@@ -430,9 +432,7 @@ Start:
           then if sysdsn(usernrc) = 'OK'
           then call do_it
           else do
-            zedsmsg = 'Invalid'
-            zedlmsg = 'NETRC dsn:' usernrc sysdsn(usernrc)
-            'Setmsg msg(isrz001)'
+            x = ftpbnrc(usernrc)
           end
         end
       end
@@ -3383,7 +3383,7 @@ Get_Member_Lists:
  /* Process the local PDS directory from trap */
   ftp_table = 'FT'random(99999)
   'tbcreate' ftp_table 'names(fmem fstate ldate ltime lsize' ,
-  'rdate rtime rsize) nowrite'
+    'rdate rtime rsize) nowrite'
   transfer. = null
   transfer_count = 0
   members = null
@@ -3396,9 +3396,9 @@ Get_Member_Lists:
     chg_time = null
     chg_date = word(pds.ip,4)
     if strip(chg_date) /= null then do
-       chg_time = word(pds.ip,5)
-       lsize = word(pds.ip,6)
-       end
+      chg_time = word(pds.ip,5)
+      lsize = word(pds.ip,6)
+    end
     if strip(chg_date) /= null then do
       if strip(chg_date) /= null then  do
         chg_date = left(chg_date,2)''substr(chg_date,4,2)''right(chg_date,2)
@@ -3676,14 +3676,14 @@ Proc_Member_List:
       if tdclas /= null then rec = rec 'datac='tdclas
       if tsclas /= null then rec = rec 'sto='tsclas
       ftpx.ftpc = rec
-      end
-      rec = ''
-      if tunit /= null then rec = rec 'Unit='tunit
-      if tvol  /= null then rec = rec 'Vol='tvol
-      if rec /= null then do
-        ftpc = ftpc + 1
-        ftpx.ftpc = rec
-        end
+    end
+    rec = ''
+    if tunit /= null then rec = rec 'Unit='tunit
+    if tvol  /= null then rec = rec 'Vol='tvol
+    if rec /= null then do
+      ftpc = ftpc + 1
+      ftpx.ftpc = rec
+    end
     ftpc = ftpc + 1
     ftpx.ftpc = 'mkdir' rpds
   end
@@ -3744,59 +3744,59 @@ Proc_Member_List:
 /*--------------------------------------------------------------------*/
 PATMATCH: Procedure
 
-IF ARG() <> 2 THEN RETURN 'PATMATCH ERROR: 2 parms required, caller',
-                          'passed 'ARG()' parms'
-haystack = ARG(2)                  /* Data to be searched w/ pattern  */
-pattern = ARG(1)                   /* Search pattern                  */
-wild = 0                           /* No '*' seen (yet)               */
+  IF ARG() <> 2 THEN RETURN 'PATMATCH ERROR: 2 parms required, caller',
+    'passed 'ARG()' parms'
+  haystack = ARG(2)                  /* Data to be searched w/ pattern  */
+  pattern = ARG(1)                   /* Search pattern                  */
+  wild = 0                           /* No '*' seen (yet)               */
   DO WHILE pattern <> ''           /* Process pattern from L to R     */
 
-  a = POS('*',pattern)             /* Look for '*' in pattern         */
-  IF a > 0 THEN                    /* If found, extract any           */
+    a = POS('*',pattern)             /* Look for '*' in pattern         */
+    IF a > 0 THEN                    /* If found, extract any           */
     DO                             /*  preceeding search string       */
-    PARSE VAR pattern needle '*' +0 newpattern
-    IF needle = '' THEN
+      PARSE VAR pattern needle '*' +0 newpattern
+      IF needle = '' THEN
       DO                           /* If no preceeding search string, */
-      wild = 1                     /*  mark next search as 'wild card'*/
-      PARSE VAR newpattern 2 pattern /* remove '*' from pattern       */
-      ITERATE                      /*    and continue testing         */
+        wild = 1                     /*  mark next search as 'wild card'*/
+        PARSE VAR newpattern 2 pattern /* remove '*' from pattern       */
+        ITERATE                      /*    and continue testing         */
       END
     END
 
-  p = POS('%',pattern)             /* Look for '%' in pattern         */
-  IF p > 0 & (a = 0 | p < a) THEN  /* If found before any '*', extract*/
+    p = POS('%',pattern)             /* Look for '%' in pattern         */
+    IF p > 0 & (a = 0 | p < a) THEN  /* If found before any '*', extract*/
     DO                             /*  any preceeding search string   */
-    PARSE VAR pattern needle '%' +0 newpattern
-    IF needle = '' THEN
+      PARSE VAR pattern needle '%' +0 newpattern
+      IF needle = '' THEN
       DO                           /* If no preceeding search string, */
-      needle = LEFT(haystack,1)    /* take next text as search string */
-      PARSE VAR newpattern 2 newpattern
-      wild = 0                     /* Mark next search 'not wild card'*/
+        needle = LEFT(haystack,1)    /* take next text as search string */
+        PARSE VAR newpattern 2 newpattern
+        wild = 0                     /* Mark next search 'not wild card'*/
       END
     END
 
-  IF p = 0 & a = 0                 /* No special chars, use remainder */
-  THEN PARSE VAR pattern needle newpattern
+    IF p = 0 & a = 0                 /* No special chars, use remainder */
+    THEN PARSE VAR pattern needle newpattern
 
-  pattern = newpattern             /* Update pattern for next pass    */
-  pos = POS(needle,haystack)       /* Look for this pattern           */
-  IF pos = 0 THEN RETURN 0         /* Not found, outta here           */
-  IF pos > 1 THEN                  /* Found, but not at start-of-text */
+    pattern = newpattern             /* Update pattern for next pass    */
+    pos = POS(needle,haystack)       /* Look for this pattern           */
+    IF pos = 0 THEN RETURN 0         /* Not found, outta here           */
+    IF pos > 1 THEN                  /* Found, but not at start-of-text */
     IF wild <> 1                   /* Wild card char in effect?       */
     THEN RETURN 0                  /* No wild card, outta here        */
-  wild = 0                         /* Reset wild card character       */
-  len = LENGTH(haystack)-LENGTH(needle)-pos+1
-  haystack = RIGHT(haystack,len)   /* Remove data that we just scanned*/
-  IF haystack = '' THEN
+    wild = 0                         /* Reset wild card character       */
+    len = LENGTH(haystack)-LENGTH(needle)-pos+1
+    haystack = RIGHT(haystack,len)   /* Remove data that we just scanned*/
+    IF haystack = '' THEN
     DO                             /* No more data to scan...         */
-    IF pattern = ''                /* Out of pattern as well?         */
-    THEN RETURN 1                  /* Yes, that's a match.            */
-    IF pattern = '*'               /* Did pattern end with wild card? */
-    THEN RETURN 1                  /* Yes, that's a match too.        */
-    RETURN 0                       /* Else, sorry, not a match.       */
+      IF pattern = ''                /* Out of pattern as well?         */
+      THEN RETURN 1                  /* Yes, that's a match.            */
+      IF pattern = '*'               /* Did pattern end with wild card? */
+      THEN RETURN 1                  /* Yes, that's a match too.        */
+      RETURN 0                       /* Else, sorry, not a match.       */
     END
   END                              /* Ran out of pattern to scan      */
-IF wild = 1                        /* Did pattern end with wild card? */
-THEN RETURN 1                      /* Yes, that's a match.            */
-ELSE RETURN 0                      /* Else, sorry, not a match.       */
+  IF wild = 1                        /* Did pattern end with wild card? */
+  THEN RETURN 1                      /* Yes, that's a match.            */
+  ELSE RETURN 0                      /* Else, sorry, not a match.       */
 /*-End of PATMATCH function-------------------------------------------*/

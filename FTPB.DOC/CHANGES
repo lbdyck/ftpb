@@ -2,6 +2,9 @@ This member (new with the 1.195 level) documents the changes from
 prior levels.
 
 01/25/2021
+1.243  - Prompt if specified NETRC does not exist.
+
+01/25/2021
 1.242  - Add ACF2 NETRC protection options (thanks JK)
 
 01/24/2021
