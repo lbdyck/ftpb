@@ -11,6 +11,7 @@
   * Author:    Lionel B. Dyck                                     *
   *                                                               *
   * History:                                                      *
+  *            01/25/21 - Dynamically get ESM for netsec          *
   *            06/28/19 - Used REXXFORM to reflow                 *
   *            04/09/04 - add netrcpre option                     *
   *            03/23/04 - add security option                     *
@@ -62,14 +63,27 @@
   * --------------------------------------- */
   netrcpre = 0
 
-  /* -------------------------- *
-  * Set NETSEC usage           *
-  *     0 = don't use it       *
-  *     RACF - for RACF        *
-  *     other for other        *
-  *       (e.g. ACF2)          *
-  * -------------------------- */
-  netsec = "RACF"
+  /* --------------------------- *
+  * Set NETSEC usage             *
+  *     0 = don't use it         *
+  *     RACF - for RACF          *
+  *     ACF2 - for ACF2          *
+  *     TSS  - for Top Secret    *
+  * ---------------------------- *
+  * Code thanks to John Kalinich *
+  * ---------------------------- */
+  numeric digits 20
+  cvt    = c2d(storage(10,4))                 /* point to CVT         */
+  cvtrac = c2d(storage(d2x(cvt+992),4))       /* point to RACF CVT    */
+  rcvt   = cvtrac                             /* use RCVT name        */
+  rcvtid = storage(d2x(rcvt),4)               /* point to RCVTID      */
+  Select
+    When rcvtid = 'RCVT' then netsec = 'RACF' /* RACF                 */
+    When rcvtid = 'RTSS' then netsec = 'TSS ' /* TSS                  */
+    When rcvtid = 'ACF2' then netsec = 'ACF2' /* ACF2                 */
+    Otherwise
+      netsec = 0   /* No ESM Found */
+   end
 
   /* -------------------------- *
   * Set SYSFTPD DD usage       *

@@ -2,6 +2,10 @@ This member (new with the 1.195 level) documents the changes from
 prior levels.
 
 01/25/2021
+1.244  - Clean up the ESM detection and variable setting.
+       - Improve the NETRC tutorial panel based upon the active ESM.
+
+01/25/2021
 1.243  - Prompt if specified NETRC does not exist.
        - Correctly handle empty jobard/host table.
 

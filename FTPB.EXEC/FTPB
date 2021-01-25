@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.243"
+  ftpbver = "1.244"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -54,11 +54,12 @@
   *   4. An ISPF table is used for jobcard information in         *
   *      the default table library (thus isptabl must be in       *
   *      isptlib).                                                *
-  *   5. If FTPBCUST NETSEC is other than 0 then find *NETSEC*    *
   *                                                               *
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/25/2021  - 1.244  - Improved NETRC tutorial and *
+  *                                   FTPBCUST                    *
   *            01/25/2021  - 1.243  - Prompt if specified NETRC   *
   *                                   does not exist.             *
   *                                 - Correctly handle empty      *

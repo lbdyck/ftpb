@@ -34,8 +34,8 @@
       end
    When netsec = 'ACF2' then do
       m0 = 'ACF2'
-      m1 = 'ACFNRULE KEY('puid')'
-      m2 = 'ADD(netrc-dsn-after-key UID('puid') READ(A) WRITE(A)'
+      m1 = 'ACFNRULE KEY('zuser') ADD(netrc-dsn-after-key UID(*))'
+      m2 = ''
       end
    When netsec = 'TSS' then do
       m0 = 'TSS'
