@@ -3,6 +3,7 @@ prior levels.
 
 01/25/2021
 1.243  - Prompt if specified NETRC does not exist.
+       - Correctly handle empty jobard/host table.
 
 01/25/2021
 1.242  - Add ACF2 NETRC protection options (thanks JK)

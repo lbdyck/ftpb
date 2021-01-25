@@ -61,6 +61,8 @@
   * History:                                                      *
   *            01/25/2021  - 1.243  - Prompt if specified NETRC   *
   *                                   does not exist.             *
+  *                                 - Correctly handle empty      *
+  *                                   jobcard/host table          *
   *            01/25/2021  - 1.242  - Add ACF2 protection option  *
   *            01/24/2021  - 1.241  - Fix sync member selection   *
   *            01/24/2021  - 1.240  - If dataset pattern and Sync *
@@ -2991,14 +2993,10 @@ Build_Thost_Table:
   "TBOpen ftpjobcd Write Library(ISPPROF)"
   if rc = 8 then do
     call Create_Table
-    targhost = "change-me"
-    call set_initial_jobcard
-    rj1 = lj1
-    rj2 = lj2
-    rj3 = lj3
-    rj4 = lj4
-    "TBadd ftpjobcd save(targport targtls)"
+    call new_thost_table_entry
   end
+  'tbquery ftpjobcd rownum(rows)'
+  if rows = 0 then call new_thost_table_entry
   "TBTop ftpjobcd"
   "TBCreate thosttbl keys(targhost)",
     "Names(tsel rj1  rj2  rj3 rj4 targport targtls thdesc)"
@@ -3014,6 +3012,16 @@ Build_Thost_Table:
   "TBSort thosttbl fields(targhost)"
   "TBTop thosttbl"
   "TBClose ftpjobcd Library(ISPPROF)"
+  return
+
+New_Thost_Table_Entry:
+  targhost = "change-me"
+  call set_initial_jobcard
+  rj1 = lj1
+  rj2 = lj2
+  rj3 = lj3
+  rj4 = lj4
+  "TBadd ftpjobcd save(targport targtls)"
   return
 
   /* -------------------------- *
