@@ -27,6 +27,20 @@ the FTPPRINT generated step.  The PRINT job step will print the report
 to the //REPORT DD and will process the data to generate a return code
 equal to the max return code for the remote job.
 
+The specification of the z/OS Target may be Yes or No.  If yes, then the
+data is transferred using z/OS native tranfer methodology. If no, then
+the data is transfered as text (or binary if binary is selected).
+
+The SYNC option for the z/OS Target enabled z/OS to z/OS processing and
+allows for the comparison of the ISPF member statistics of both the
+Source (local) and Target (remote) versions of the PDS. This allows
+the option to Get (copy the target member to the local PDS), Put (copy
+the local PDS member to the target PDS), or the ability to Compare the
+target member to the local member. During this function the recommended
+actions (GET/PUT) are presented, with the ability to change or ignore the
+recommended action.
+
+
 For partitioned data sets the dialog provides member selection if a
 member is not specified as part of the source data set name.  Two
 options are provided for the transfer of a PDS.  One option is to unload
@@ -50,10 +64,6 @@ of data sets dump'd and restore'd using ADRDSSU.
 
 Known Problems/Challenges:
 
-NOTE: that 2 and 4 have been fixed and the dialog has been
-      updated but if you have these problems you can uncomment
-      the code to return these restrictions.
-
 1.  There exists a problem when using FTP to transfer load modules
     caused by the inability of FTP to correctly transfer the directory
     information for the load module.  The 'solution' for this is to
@@ -61,70 +71,16 @@ NOTE: that 2 and 4 have been fixed and the dialog has been
     and then transfer that with a reload using IEBCOPY at the target
     site.
 
-2.  The FTP of an IEBCOPY UNLOAD'd PDS where the original PDS had a
-    BLKSIZE of 32753 or greater results in a data set that FTP is
-    unable to successfully transfer.  The dialog will detect this and
-    present the user with a warning panel and not perform the
-    transfer.  The data set must be reblocked prior to the IEBCOPY
-    UNLOAD.
-
-    ** This has been fixed (YES) but you must have the maintenance to
-       support VBS dataset transfers.
-
-3.  The submitted JOB's SYSOUT will remain at the remote executiion
+2.  The submitted JOB's SYSOUT will remain at the remote executiion
     site in the SPOOL until the SPOOL cleanup removes it as it is
     submitted with an OUTPUT JCL statement to be held so that it can
     be retrieved by the FTP GET (when filetype=jes is used) and thus
     included in the originating JOBs SYSOUT.
 
-4.  The FTP of a RECFM=VBS dataset will not work directly until IBM
-    fixes the FTP Client (target is with OS/390 2.5 release maybe).
-    This transfer will use DFSMSdss just as VSAM for now.
 
-    ** This has been fixed (YES) but you must have the maintenance to
-       support VBS dataset transfers.
-
-5.  When using DFSMSdss to dump/ftp/restore a PDSE the target may not
+4.  When using DFSMSdss to dump/ftp/restore a PDSE the target may not
     restore if PDSE is not enabled and you will need to use the CONVERT
     statement (check the manual for syntax) in the restore.
-
-Product Components
-
-The product consists of the following elements:
-
-    ISPF Panels:
-
-    FTPB             Primary ISPF Panel called by FTPB
-    FTPBEXEC         Patience panel displayed for online FTP executions
-    FTPBGS           Submit/Exec ISPF Menu for non-unload transfers
-    FTPBGSU          Submit ISPF Menu for unload transfers
-    FTPBGSUP         Information on submitted job if reload used
-    FTPBHF*          ISPF field level tutorial panels
-    FTPBHFx          Field level help
-    FTPBH0           ISPF Tutorial Panel for FTPB
-    FTPBH1           ISPF Tutorial Panel for FTPBGS
-    FTPBH2           ISPF Tutorial Panel for FTPBGSU
-    FTPBM            ISPF member selection Panel
-    FTPBSHST         Host selection panel
-    FTPBPDSS         Transfer Prompting when using DFSMSdss
-    FTPBPPDS         PDS Transfer Prompting
-    FTPBPRCL         Prompt to recall for himgrated datasets
-    FTPBSITE         Panel display of target allocation options
-    FTPBPWRN         Warning for Unsupported Blksize Transfer  **
-
-    ** - not used unless you uncomment code in the FTPB exec
-         as this is only used if you are running without the
-         current maintenance for vbs support.
-
-    Panels removed:  FTPBHHST, FTPBHOST
-
-    REXX Execs:
-
-    FTPB              Primary Exec and the starting point for FTPB
-    FTPBEM            ISPF Edit Macro called by FTPB to set key PROFILE info
-    FTPBEME           ISPF Edit Macro when the END command/key is used
-    FTPBEMS           ISPF Edit Macro when the SAVE command/key is used
-    FTPBJOB2          Exec used to process the remote job
 
 Note that an ISPF Table is built and maintained in Library(ISPPROF)
 that contains the jobcard information for each target node.
