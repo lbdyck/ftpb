@@ -3255,6 +3255,7 @@ Do_Pop2:
   'addpop'
   'display panel(ftpbpop2)'
   'rempop'
+  parse value '' with m1 m2
   return
 
 /* ------------------------------ *
@@ -3265,6 +3266,7 @@ Do_Pop4:
   'addpop'
   'display panel(ftpbpop4)'
   'rempop'
+  parse value '' with m1 m2 m3 m4
   return
 
 /* ----------------------------------- *
