@@ -3,21 +3,17 @@
 ` type(text) intens(high) caps(off) just(asis ) color(yellow)
 ~ type(text) intens(high) caps(off) just(asis ) color(turq)
 % type(text) intens(high)
-# type(output) intens(high)
-)Body Window(59,18)
+# type(output) intens(high) caps(off)
+)Body Window(67,14)
 +
 `NETRC option
 +
 +This field allows you to specify your personal NETRC
 +data set, or data set member, to be used.
 +
-+NOTES:%RACF+Protection
-  +Issue%ADDSD netrc-dsn UACC(NONE)
-+  and%PERMIT netrc-dsn ACCESS(ALTER)#puid
-+
-+NOTES:%ACF2+Protection
-  +Issue%ACFNRULE KEY(hlq)
-%  ADD( netrc-dsn-after-key UID(...userid) READ(A) WRITE(A)
++NOTES:#m0  +Protection
+  +Issue#m1
++  and  #m2
 +
 +NETRC Format:
 %MACHINE hostname LOGIN userid PASSWORD password
@@ -27,7 +23,30 @@
  &zwinttl = 'FTP NETRC Option'
  &zcont = ftpbhf6
  &zup   = ftpbhf5
-*REXX(*)
+ vget (netsec)
+*REXX(* netsec)
  puid = 'ID('sysvar('sysuid')')'
+ Select
+   When netsec = 'RACF' then do
+      m0 = 'RACF'
+      m1 = 'ADDSD netrc-dsn UACC(NONE)'
+      m2 = 'PERMIT netrc-dsn ACCESS(ALTER)' puid
+      end
+   When netsec = 'ACF2' then do
+      m0 = 'ACF2'
+      m1 = 'ACFNRULE KEY('puid')'
+      m2 = 'ADD(netrc-dsn-after-key UID('puid') READ(A) WRITE(A)'
+      end
+   When netsec = 'TSS' then do
+      m0 = 'TSS'
+      m1 = 'Unknown - see your Security Admin'
+      m2 = ' '
+      end
+   otherwise do
+      m0 = '???'
+      m1 = 'Unknown - see your Security Admin'
+      m2 = ' '
+      end
+   end
 *ENDREXX
 )END
