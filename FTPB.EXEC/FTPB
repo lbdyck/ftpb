@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.241"
+  ftpbver = "1.242"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -42,6 +42,7 @@
   *                    find_vsam_space routine                    *
   *                                                               *
   *   John Kalinich  - pds directory read routine in rexx         *
+  *                  - ACF2 ACFNRULE for NETRC protection         *
   *                                                               *
   * Installation customization:                                   *
   *   1. Update the FTPBCUST REXX exec for your installation      *
@@ -58,6 +59,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/25/2021  - 1.242  - Add ACF2 protection option  *
   *            01/24/2021  - 1.241  - Fix sync member selection   *
   *            01/24/2021  - 1.240  - If dataset pattern and Sync *
   *                                   error message               *
@@ -3076,6 +3078,9 @@ Set_Netsec:
     When netsec = "RACF" then do
       "Addsd  '"netrc_dsn"' UACC(none)"
       "Permit '"netrc_dsn"' Access(alter) ID("sysvar('sysuid')")"
+    end
+    When netsec = "ACF2" then do
+      "ACFNRULE KEY("sysvar('sysuid')" ADD( NETRC UID(*))"
     end
     Otherwise nop
   end
