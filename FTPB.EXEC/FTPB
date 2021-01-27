@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.244"
+  ftpbver = "1.245"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/27/2021  - 1.245  - Correct Sort for Sync for   *
+  *                                   remote only members         *
   *            01/25/2021  - 1.244  - Improved NETRC tutorial and *
   *                                   FTPBCUST                    *
   *            01/25/2021  - 1.243  - Prompt if specified NETRC   *
@@ -3486,6 +3488,7 @@ Get_Member_Lists:
     end
   end
   'tbtop' ftp_table
+  'tbsort' ftp_table 'fields(fmem,ch,a)'
   return
 
 Proc_Member_List:
