@@ -1,6 +1,9 @@
 This member (new with the 1.195 level) documents the changes from
 prior levels.
 
+02/03/2021
+1.246  - Reverse cd and lcd for Sync FTP
+
 01/27/2021
 1.245  - Correct Sync member sort
 

@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.245"
+  ftpbver = "1.246"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            02/03/2021  - 1.246  - Reverse cd/lcd for sync     *
   *            01/27/2021  - 1.245  - Correct Sort for Sync for   *
   *                                   remote only members         *
   *            01/25/2021  - 1.244  - Improved NETRC tutorial and *
@@ -3703,9 +3704,9 @@ Proc_Member_List:
   end
 
   ftpc = ftpc + 1
-  ftpx.ftpc = 'cd' rpds
-  ftpc = ftpc + 1
   ftpx.ftpc = 'lcd' lpds
+  ftpc = ftpc + 1
+  ftpx.ftpc = 'cd' rpds
 
   do i = 1 to words(transfer.0)
     fmem = word(transfer.0,i)
