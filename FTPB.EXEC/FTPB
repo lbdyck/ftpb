@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.246"
+  ftpbver = "1.247"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,9 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            02/08/2021  - 1.247  - Remove OS Level Check as    *
+  *                                   obsolete                    *
+  *                                 - FIX 1st pass job card setup *
   *            02/03/2021  - 1.246  - Reverse cd/lcd for sync     *
   *            01/27/2021  - 1.245  - Correct Sort for Sync for   *
   *                                   remote only members         *
@@ -343,13 +346,6 @@
   "Vget (password passwvfy) Profile"
 
   alloc_netrc = 0
-
-  /* ------------------------------------------------------- *
-  * Get the level of OS/390 as with v2r10 FTP can send load *
-  * modules natively. We want os_lvl > 5                    *
-  * ------------------------------------------------------- */
-  os_lvl = mvsvar('sysmvs')
-  os_lvl = substr(os_lvl,3,1)
 
 Start:
   /* -------------------------- *
@@ -876,7 +872,6 @@ Do_It:
     When sysdsorg = "PO" then do
       if sysrecfm <> "U" then
       unl = "No"
-      if os_lvl > 5 then unl = "No"
       if mvs = 'Sync' then do
         call set_ftp
         call do_local_jcl
@@ -3036,6 +3031,9 @@ set_initial_jobcard:
   lj2 = jc2
   lj3 = jc3
   lj4 = jc4
+  if lj4 = null then lj4 = '//*'
+  if lj3 = null then lj3 = '//*'
+  if lj2 = null then lj2 = '//*'
   "Vput (lj1 lj2 lj3 lj4) Profile"
   return
 

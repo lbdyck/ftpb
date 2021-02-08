@@ -1,6 +1,10 @@
 This member (new with the 1.195 level) documents the changes from
 prior levels.
 
+02/08/2021
+1.247  - Remove OS Level check as obsolete
+       - Correct 1st time jobcard setup (fix null card)
+
 02/03/2021
 1.246  - Reverse cd and lcd for Sync FTP
 
