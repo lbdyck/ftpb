@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.247"
+  ftpbver = "1.248"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            02/11/2021  - 1.248  - Correct unload recfm=u new  *
   *            02/08/2021  - 1.247  - Remove OS Level Check as    *
   *                                   obsolete                    *
   *                                 - FIX 1st pass job card setup *
@@ -359,11 +360,12 @@ Start:
       else "Free F(NETRC)"
       alloc_netrc = 0
     end
-    parse value null with ftp. load. members unl do_pds_flag od ,
+    parse value null with ftp. load. members do_pds_flag od ,
       mhst submit_flag loadjcl_dsn_flag dss tape_fl
     ftp.0  = 0
     load.0 = 0
     dc     = 0
+    unl    = 'No'
     excluded.0 = 0
     selected.0 = 0
     big_load = null
@@ -878,7 +880,7 @@ Do_It:
         call do_sync
         return
       end
-      else call do_members
+      call do_members
       if mem_err = 1 then do
         zedsmsg = "*Error*"
         zedlmsg = "No members found to match specified",
