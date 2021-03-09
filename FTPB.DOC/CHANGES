@@ -1,6 +1,9 @@
 This member (new with the 1.195 level) documents the changes from
 prior levels.
 
+03/09/2021
+1.249  - Improve the Sync message
+
 02/11/2021
 1.248  - Correct incorrect JCL build if recfm=u and unload
 

@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.248"
+  ftpbver = "1.249"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            03/09/2021  - 1.249  - Clean up sync count msg     *
   *            02/11/2021  - 1.248  - Correct unload recfm=u new  *
   *            02/08/2021  - 1.247  - Remove OS Level Check as    *
   *                                   obsolete                    *
@@ -3741,7 +3742,9 @@ Proc_Member_List:
   Address TSO ,
     "Execio * diskw" ddn "(Finis stem ftp."
 
-  m1 = transfer_count 'members to be processed.'
+  if transfer_count = 1
+  then m1 = transfer_count 'member to be processed.'
+  else m1 = transfer_count 'members to be processed.'
 
   call Do_FTP
 
