@@ -1,0 +1,17 @@
+)Attr
+ _ type(input) hilite(uscore) caps(on) intens(low)
+)Body window(62,7)
+%Command ===>_zcmd
++
++Enter/Verify the fully qualified dataset name of your NETRC
++dataset:_netrcds                                       +
++
++Must be a sequential dataset. If it does not exist
++then it will be created.
+)Init
+ .cursor = netrcds
+ .help = netrcph
+ &zwinttl = 'Enter NETRC Dataset'
+)Proc
+ ver (&netrcds,nb,dsnameq)
+)End

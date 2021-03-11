@@ -1,0 +1,13 @@
+)Attr
+ _ type(input ) hilite(uscore) intens(low) caps(off)
+)Body Window(60,5)
+%Command ===>_zcmd
++
+%Host:       _host
+%Userid:     _uid
+%Password:   _pw
+)Init
+ &zwinttl = 'Review/Update Netrc Data'
+ .help = netrcuph
+)Proc
+)End

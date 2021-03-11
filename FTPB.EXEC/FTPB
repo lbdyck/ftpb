@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.249"
+  ftpbver = "1.250"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            03/11/2021  - 1.250  - Fix sync for mems nostats   *
   *            03/09/2021  - 1.249  - Clean up sync count msg     *
   *            02/11/2021  - 1.248  - Correct unload recfm=u new  *
   *            02/08/2021  - 1.247  - Remove OS Level Check as    *
@@ -3489,6 +3490,21 @@ Get_Member_Lists:
       'tbadd' ftp_table
     end
   end
+
+  do i = 1 to words(mem.0)
+     rm = word(mem.0,i)
+     if wordpos(rm,members) > 0 then iterate
+     parse value mem.rm with rdate rtime rsize
+      rdate = left(rdate,4)''substr(rdate,6,2)''right(rdate,2)
+      rtime = word(out.ip,off+4)
+      rsize = word(out.ip,off+5)
+      fstate = 'GET'
+      transfer_count = transfer_count + 1
+      transfer.0 = transfer.0 fmem
+      transfer.fmem = fstate
+      'tbadd' ftp_table
+     end
+
   'tbtop' ftp_table
   'tbsort' ftp_table 'fields(fmem,ch,a)'
   return
