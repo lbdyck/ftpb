@@ -11,6 +11,7 @@
   * Author:    Lionel B. Dyck                                     *
   *                                                               *
   * History:                                                      *
+  *            03/14/21 - Prevent Submit from within EDIT         *
   *            06/28/19 - Used REXXFORM to reflow code            *
   *            03/25/97 - add notelines                           *
   *            11/26/96 - creation                                *
@@ -35,6 +36,7 @@
   "DEFINE FTPBEMS MACRO CMD"
   "DEFINE END ALIAS FTPBEME"
   "DEFINE SAVE ALIAS FTPBEMS"
+  "DEFINE SUBMIT DISABLED"
   "LINE_Before 1     = Noteline " ,
     "'** CAPS have been set on by default but if  **'"
   "LINE_Before 1     = Noteline " ,
@@ -43,4 +45,6 @@
     "'** you might want to change to CAPS OFF if  **'"
   "LINE_Before 1     = Noteline " ,
     "'** the target site is case sensitive.       **'"
+  "LINE_Before 1     = Noteline " ,
+    "'** NOTE: Submit is NOT allowed within Edit. **'"
   "CAPS ON"

@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.252"
+  ftpbver = "1.253"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            03/14/2021  - 1.253  - Add NETRC DD comments       *
   *            03/12/2021  - 1.252  - Correct 1.251 bug (dup sync)*
   *            03/11/2021  - 1.251  - Correct 1.250 bug           *
   *            03/11/2021  - 1.250  - Fix sync for mems nostats   *
@@ -1489,6 +1490,12 @@ Set_FTP:
 
   if netrc = 1 then do
     if usernrc = null then do
+      nn = nn + 1
+      ftp.nn = ,
+      "//* The NETRC Dataset will be allocated with the Submit dialog"
+      nn = nn + 1
+      ftp.nn = ,
+      "//* option to protect your password."
       nn = nn + 1
       ftp.nn = "//NETRC     DD  DISP=(OLD,DELETE,DELETE),"
       nn = nn + 1

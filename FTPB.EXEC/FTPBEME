@@ -9,8 +9,8 @@
   Address ISREDIT
   "MACRO (PARM) NOPROCESS"
 
-  "DEFINE END RESET"     /* reset END back to normal */
-  "DEFINE SAVE RESET  "  /* reset SAVE back to normal */
+  "DEFINE END RESET"     /* reset END back to normal    */
+  "DEFINE SAVE RESET  "  /* reset SAVE back to normal   */
 
   "(num) = NUM"
   if num = "ON" then "UNNUM"
