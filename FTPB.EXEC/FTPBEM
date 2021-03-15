@@ -22,6 +22,8 @@
 
   "MACRO"
 
+  Address ISPEXEC 'vget (usernrc)'
+
   exit_rc = ""
 
   "RECOVERY ON"
@@ -36,6 +38,7 @@
   "DEFINE FTPBEMS MACRO CMD"
   "DEFINE END ALIAS FTPBEME"
   "DEFINE SAVE ALIAS FTPBEMS"
+  if usernrc = null then
   "DEFINE SUBMIT DISABLED"
   "LINE_Before 1     = Noteline " ,
     "'** CAPS have been set on by default but if  **'"
@@ -45,6 +48,7 @@
     "'** you might want to change to CAPS OFF if  **'"
   "LINE_Before 1     = Noteline " ,
     "'** the target site is case sensitive.       **'"
+  if usernrc = null then
   "LINE_Before 1     = Noteline " ,
     "'** NOTE: Submit is NOT allowed within Edit. **'"
   "CAPS ON"
