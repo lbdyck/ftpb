@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.254"
+  ftpbver = "1.255"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            03/22/2021  - 1.255  - Support Empty from/to PDS   *
+  *                                   for Sync.                   *
   *            03/15/2021  - 1.254  - Allow Edit Submit if NETRC  *
   *            03/14/2021  - 1.253  - Add NETRC DD comments       *
   *            03/12/2021  - 1.252  - Correct 1.251 bug (dup sync)*
@@ -3473,6 +3475,7 @@ Get_Member_Lists:
     rtime = left(word(mem.member,2),2)''right(word(mem.member,2),2)
     if mult = 1 then mult = 'mult('pds.0')'
     else mult = null
+    if wordpos(fmem,mem.0) = 0 then fstate = 'PUT'
     'tbadd' ftp_Table mult
     if wordpos(fmem,transfer.0) = 0 then
     transfer.0 = transfer.0 fmem
@@ -3480,6 +3483,7 @@ Get_Member_Lists:
     if fstate /= null then
     transfer_count = transfer_count + 1
   end
+
   parse value '' with ldate ltime lsize
   do ip = out_ic to out.0
     if pos('List completed',out.ip) > 0 then leave
@@ -3487,7 +3491,6 @@ Get_Member_Lists:
     if sync_member /= null then
     if patmatch(sync_member,fmem) = 0 then iterate
     if wordpos(fmem,members) > 0 then iterate
-    members = members fmem
     rtime = null
     rdate = word(out.ip,off+3)
     if strip(rdate) /= null then do
