@@ -4,15 +4,14 @@
 ~ type(text) intens(high) caps(off) just(asis ) color(turq)
 % type(text) intens(high)
 # type(text) intens(high) color(turq) hilite(reverse)
-)BODY WINDOW(60,15)
+)Body Window(58,12)
 +
 `Binary+
 ~
-~If the target (remote) system is#not~a z/OS system
-~then you might want to specify`binary~if the data is
-~not text type data.  If it contains packed decimal or
-~other non-alphanumeric data it should probably be
-~sent as binary.
+~If the Remote system is#not~a z/OS system then you might
+~want to specify`binary~if the data is not text type data.
+~If it contains packed decimal or other non-alphanumeric
+~data it should probably be sent as binary.
 ~
 ~Caution should be exercise when using this option as
 ~the application at the remote system must be able to

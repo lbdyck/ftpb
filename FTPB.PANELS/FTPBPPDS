@@ -11,11 +11,11 @@
 
 +   You are transferring a partitioned data set (PDS).
 
-+   Create/Replace data set at target%===>_new+   Yes (Create) or No (Replace)
-+   Delete target before FTP         %===>_dln+   Yes or No (on Create Only)
++   Create/Replace data set at remote%===>_new+   Yes (Create) or No (Replace)
++   Delete remote before FTP         %===>_dln+   Yes or No (on Create Only)
 +   Unload for transfer              %===>_unl+   Yes or No
 
-+   Remote High Level Qualifier %===>$whlq                     + Target Node
++   Remote High Level Qualifier %===>$whlq                     + Remote Node
 +                                                                optional
 +
 +   Create SYSUT3 for IEBCOPY Unload %===>_ut3+   Yes or No. Need for large PDS
@@ -33,7 +33,7 @@
  &ut3 = trans(trunc(&ut3,1) Y,Yes N,No y,Yes n,No &z,No)
  &xhost = &thost
  if (&thost = '*****')
-     &xhost = 'multiple target hostnames'
+     &xhost = 'multiple remote hostnames'
 
 )PROC
  ver (&whlq,dsname)

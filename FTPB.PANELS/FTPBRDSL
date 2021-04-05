@@ -1,28 +1,29 @@
 )Attr Default(%+_)
 /* % type(text  ) intens(high)              Defaults displayed for */
-/* + type(text  ) intens(low )                   information only  */
+   + type(text  ) intens(low ) skip(on)
 /* _ type( input) intens(high) caps(on ) just(left )               */
    ! type( input) intens(high) caps(on ) just(left ) hilite(uscore)
    ^ type(output) intens(low ) caps(off) just(asis )
-   # type(output) intens(high) caps(off) just(asis )
+   @ type(output) intens(low ) caps(off) just(right)
    ~ type(text) intens(high) color(blue) hilite(reverse)
    ` type(text) intens(high) color(red)
 )Body  Expand(//)
-%-/-/- ~FTP Remote Host Selection+ -/-/-
+%-/-/- ~FTP Dataset Selection+ -/-/-
 %Command ===>_zcmd                                 / /%Scroll ===>_amt +
 %
-+Command Options:`Find+to find a string `Sort A+or`D+by hostname`Netrc+Update
-+Row Options    :`C+to clone`D+to delete`U+to update`\+to unSelect
++Command Options:`Refresh+to refresh the list or`Cancel+
++Selection Options:`S+Select`U+Unselect
 +
-%Sel  Action  Remote Hostname
-+             TLS   Port    Description
+%Sel  Action  Dataset                                        Dsorg Size  Volume
 +
 )Model
-!z+  ^z       ^z
-+             #z   #z    #z
+!z+  ^z      ^z                                             ^z    @z   +^z
 )Init
-  .ZVARS = '(hsel tsel targhost targtls targport thdesc)'
+  .ZVARS = '(gsel gact gdsn gdsorg gused gvol)'
   &amt = csr
+  .help = ftpbrdsh
 )Reinit
+ .cursor = zcmd
 )Proc
+ver (&gsel,list,S,U,&z)
 )End

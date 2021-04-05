@@ -9,7 +9,7 @@
 `Port option+
 ~
 ~This field allows you to specify the PORT to be
-~used at the target host. 21 is the default.
+~used at the Remote host. 21 is the default.
 +
 )INIT
  &zwinttl = 'FTP Port Option'

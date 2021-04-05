@@ -7,11 +7,11 @@
 +
 `Hostname+
 +
-~This input field defines the TCP/IP Host Name of the target
-~(remote) system or host that the Source Data Set will be
-~copied to. The key to a host name is that it references a
-~system that is part of the DASD complex where you want the
-~data set(s) to be copied.
+~This input field defines the TCP/IP Host Name of the Remote
+~system or host that the Local Data Set will be copied to. The
+~key to a host name is that it references a system that is
+~part of the DASD complex where you want the data set(s) to be
+~copied.
 ~
 ~If%?~is used then you will be prompted with table display of
 ~all previously used hostnames from which you may select from
@@ -23,7 +23,7 @@
 ~  test.company.com    + Test LPAR
 )INIT
  &zwinttl = 'FTP Hostname Option'
- &zcont = ftpbhf3
- &zup   = ftpbhf1
+ &zcont = ftpbhf12
+ &zup   = ftpbhf2
 )PROC
 )END

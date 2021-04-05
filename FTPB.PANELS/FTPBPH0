@@ -45,7 +45,7 @@
 ~
 %    Replace
 ~
-    ~%Yes~means that if the data set exists at the target site already that
+    ~%Yes~means that if the data set exists at the remote site already that
     ~ you want to replace it with this transfer
     ~
     ~%No~means that if the data set already exists to leave it alone and

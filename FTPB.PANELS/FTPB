@@ -1,6 +1,6 @@
 )ATTR Default(%+_)
-/* + type(text  ) intens(low )                   information only  */
-/* _ type( input) intens(high) caps(on ) just(left )               */
+   + type(text  ) intens(low )
+   _ type( input) intens(high) caps(on ) just(left ) hilite(uscore)
    ^ type(text  ) intens(low ) skip(on)
    @ type( input) intens(high) caps(off) just(left ) hilite(uscore)
    { type( input) intens(high) caps(on ) just(left ) hilite(uscore)
@@ -9,31 +9,32 @@
    % type(text) intens(high)
    ~ type(text) intens(high) color(blue) hilite(reverse)
    # type(output) intens(high) color(blue) just(right)
-)BODY
-+-------------------------~TCP/IP FTP Dialog+--------------------------#ftpbver+
+)BODY Expand(\\)
++\-\-%TCP/IP FTP Dialog+\-\#ftpbver+
 %Command ===>_zcmd
 +
-+Source Data Set%===>@sdsname                                               #s1+
-+                     member of '*' for all members if PDS or pattern x*
-+Target Information:
++From  Data Set%===>@sdsname                                                #s1+
++To    Data Set%===>@tdsname                                                #s2+
++
++Remote Information:            Direction%===>_z+ %G+Get,%P+Put+or%S+Sync
 + Hostname or ? %===>@thost                                                   +
-+ Host Data Set %===>@tdsname                                               #s2+
 + FTP Port      %===>@thport +  Use TLS%===>@tls+
 +
 +User Information:
-+   Userid         %===>@userid                                  +<===
-+   Password       %===>`password                                ^<===
-+   Verify Password%===>`passwvfy                                ^<===
-+or NETRC          %===>{usernrc                                               +
++   Userid         %===>@userid                                                +
++   Password       %===>`password                                              +
++   Verify Password%===>`passwvfy                                              +
++or NETRC DSname   %===>{usernrc                                       +
 +
 +Optional Information:
-+  z/OS Target%===>@mvs +  Is the target system running z/OS?%Yes No+or%Sync
-+   Binary    %===>@bin+  %Yes+or%No+(use%No+for z/OS to z/OS)
-+   Firewall  %===>@fir+   Address if Yes ===>@firewall
-+   Initial   %===>$other                                                     %<
-+      cmds   %===>$other2                                                    %<
-+  Post cmd   %===>$post                                                      %<
++  z/OS Remote%===>@mvs +Is the Remote system running z/OS?%Yes No
++   Binary    %===>@bin+%Yes+or%No+(use%No+for z/OS to z/OS)
++   Firewall  %===>@fir+ Address if Yes ===>@firewall                          +
++   Initial   %===>$other                                                      +
++      cmds   %===>$other2                                                     +
++  Post cmd   %===>$post                                                       +
 )INIT
+ .zvars = '(ftpgp)'
  .help = ftpbh0
  IF (&sdsname = &Z)
     .cursor = sdsname
@@ -41,12 +42,13 @@
     .cursor = zcmd
  IF (&thport EQ &Z)
     &thport = 21
- &mvs = trans(trunc(&mvs,1) &z,Yes Y,Yes N,No S,Sync s,Sync y,Yes n,No *,*)
+ &mvs = trans(trunc(&mvs,1) &z,Yes Y,Yes N,No y,Yes n,No *,*)
  &bin = trans(trunc(&bin,1) &z,No  Y,Yes N,No *,*)
  &fir = trans(trunc(&fir,1) &z,No  Y,Yes N,No *,*)
  &tls = trans(trunc(&tls,1) &z,No  Y,Yes N,No *,*)
+ &ftpgp = trans(&ftpgp &z,P G,G P,P S,S)
 )PROC
-&mvs = trans(trunc(&mvs,1) &z,Yes Y,Yes N,No S,Sync s,Sync y,Yes n,No *,*)
+&mvs = trans(trunc(&mvs,1) &z,Yes Y,Yes N,No y,Yes n,No *,*)
 &bin = trans(trunc(&bin,1) &z,No  Y,Yes N,No y,Yes n,No *,*)
 &fir = trans(trunc(&fir,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
 &tls = trans(trunc(&tls,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
@@ -56,7 +58,8 @@ if (&egg NE EGG)
    if (&zcmd = &z)
       ver (&sdsname,nb)
       ver (&thost,nb)
-      ver (&userid,nb)
+      if (&usernrc EQ &Z)
+          ver (&userid,nb)
       if (&usernrc NE &Z)
          ver (&usernrc,dsnameq)
       if (&usernrc EQ &Z)
@@ -67,9 +70,48 @@ if (&egg NE EGG)
       if (&fir EQ Yes)
           ver (&firewall,nb)
       ver (&bin,nb,list,Yes,No)
-      ver (&mvs,nb,list,Yes,No,Sync)
+      ver (&mvs,nb,list,Yes,No)
+       ver (&ftpgp,nb,list,P,G,S)
+ &resp = .resp
+*rexx(* zedsmsg zedlmsg csr resp)
+  if resp = 'END' then exit
+  parse value '' with zedsmsg zedlmsg null
+  if pos(ftpgp,'GS') = 0
+  then if mvs /= 'Yes' then do
+    zedsmsg = 'Invalid'
+    zedlmsg = 'Direction of G (Get) or S (Sync) requires the z/OS Target' ,
+      'to be Yes.'
+    csr = 'MVS'
+  end
+  if zedsmsg = null then
+  if ftpgp = 'G' then
+  if pos('*',sdsname) > 0 then do
+    zedsmsg = 'Invalid'
+    zedlmsg = 'An * is not allowed for the From or To Data Set names with' ,
+      'a GET direction.'
+      csr = 'SDSNAME'
+  end
+  if zedsmsg = null then
+  if ftpgp = 'G' then
+  if pos('*',tdsname) > 0 then do
+    zedsmsg = 'Invalid'
+    zedlmsg = 'An * is not allowed for the From or To Data Set names with' ,
+      'a GET direction.'
+      csr = 'TDSNAME'
+  end
+  if usernrc /= null then
+  if left(usernrc,1) /= "'" then do
+    if sysvar('syspref') /= null then uhlq = sysvar('syspref')
+    else uhlq = sysvar('sysuid')
+    usernrc = "'"uhlq"."usernrc"'"
+  end
+*Endrexx
+ IF (&ZEDSMSG NE &Z)
+    .MSG = ISRZ001
+    .CURSOR = &csr
 )Help
  Field(sdsname)  panel(ftpbhf1)
+ Field(ftpgp)    panel(ftpbhfd)
  Field(thost)    panel(ftpbhf2)
  Field(thport)   panel(ftpbhf12)
  Field(tdsname)  panel(ftpbhf3)

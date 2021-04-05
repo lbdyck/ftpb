@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "1.256"
+  ftpbver = "2.000"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,14 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            04/02/2021  - 2.000  - Move SYNC option to         *
+  *                                   Direction                   *
+  *                                 - Term change Source->From    *
+  *                                   Target->To                  *
+  *                                 - For Remote Job Card read    *
+  *                                   userid from NETRC if none   *
+  *            03/29/2021  - 1.258  - Correct VSAM on Get         *
+  *            03/27/2021  - 1.257  - Add GET option              *
   *            03/23/2021  - 1.256  - Prevent dups from remote    *
   *            03/22/2021  - 1.255  - Support Empty from/to PDS   *
   *                                   for Sync.                   *
@@ -264,7 +272,7 @@
     if pos("*",options) > 0 then do
       say "Syntax error. An initial option of" options ,
         "is not allowed. Enter the dialog and enter it"  ,
-        "in the source dataset field."
+        "in the Local dataset field."
       exit 16
     end
   end
@@ -315,7 +323,7 @@
   *    MVS or NOMVS sets the mvs value to Yes or No       *
   *    ANONYMOUS sets the userid to anonymous             *
   *    BINARY sets the bin value to Yes                   *
-  *    HOST sets the target host to the host name         *
+  *    HOST sets the remote host to the host name         *
   *         supplied as the next word in the options      *
   * ----------------------------------------------------- */
   if length(more) > 0 then do
@@ -409,7 +417,7 @@ Start:
     end
     else do
       zedsmsg = null
-      if mvs = 'Sync' then do
+      if ftpgp = 'S' then do /* Sync */
         if pos('*',sdsname) > 0 then
         if pos('(',sdsname) = 0 then do
           zedsmsg = 'Invalid'
@@ -460,11 +468,22 @@ Do_It:
   if pos("/",sdsname) = 0 then
   sdsname = translate(sdsname)
   "Vput (sdsname thost userid bin mvs other other2 usernrc" ,
-    "thport fir tls firewall post) Profile"
+    "thport fir tls firewall post ftpgp) Profile"
 
-/* ---------------------------------------------- *
- | Fixup the user netrc data set name for JCL use |
- * ---------------------------------------------- */
+  /* ------------------------ *
+  * Test for Feedback option *
+  * ------------------------ */
+  if abbrev("FEEDBACK",zcmd,2) = 1 then do
+    zcmd = null
+    feedback = "lbdyck@gmail.com"
+    Address TSO,
+      "%genrfdbk FTPBatch" ftpbver feedback
+    return
+  end
+
+  /* ---------------------------------------------- *
+  | Fixup the user netrc data set name for JCL use |
+  * ---------------------------------------------- */
   if usernrc /= null then do
     x = listdsi(usernrc)
     if pos('(',usernrc) = 0
@@ -478,9 +497,8 @@ Do_It:
   /* -------------------------- *
   * Clear some variables       *
   * -------------------------- */
-  parse value null with to_mem to_dsn from_dsn sdsnamex ,
-    tdsnamex gdg rename multiple ,
-    sysalloc sysseconds direct sp
+  parse value null with to_mem to_dsn from_dsn sdsnamex tdsnamex ,
+    gdg rename multiple sysalloc sysseconds direct sp
 
   /* --------------------------------------------------------- *
   * Setup HLQ and MLQ and RHLQ (remote)                       *
@@ -497,192 +515,184 @@ Do_It:
   rhlq = translate(userid)
   whlq = rhlq
 
-  /* ------------------------ *
-  * Test for Feedback option *
-  * ------------------------ */
-  if abbrev("FEEDBACK",zcmd,2) = 1 then do
-    zcmd = null
-    feedback = "lbdyck@gmail.com"
-    Address TSO,
-      "%genrfdbk FTPBatch" ftpbver feedback
-    return
-  end
-
-  /* -------------------------- *
-  * Find sending member ?      *
-  * or if multiple dsn xfer ?  *
-  * -------------------------- */
-  Select
-    when left(sdsname,1) = "/" then nop
-    when pos("(",sdsname) > 0 then do
-      parse value sdsname with sdsnamex "(" members ")"
-      Select
-        When pos(left(members,1),"-+") > 0 then call get_gdg
-        When datatype(members) = "NUM" then call get_gdg
-        Otherwise nop
-      end
-      if gdg = null then
-      if left(sdsnamex,1) = "'" then
-      sdsnamex = sdsnamex"'"
-    end
-    /* ----------------------------------------------------- *
-    * Look for wildcard.                                    *
-    * - set multiple flag on                                *
-    * - if .* then make .** as df/dss requires that for     *
-    *   more than a single level                            *
-    * ----------------------------------------------------- */
-    when pos("*",sdsname) > 0 then do
-      if left(sdsname,1) = "'" then
-      sdsname = substr(sdsname,2,length(sdsname)-2)
-      if right(sdsname,2) = ".*" then do
-        sdsname = sdsname"*"
-      end
-      multiple = "on"
-    end
-    otherwise nop
-  end
-
-  /* -------------------------- *
-  * Find target member ?       *
-  * -------------------------- */
-  if length(tdsname) > 0 then tdsnamex = tdsname
-  if pos("(",tdsname) > 0 then do
-    parse value tdsname with tdsnamex "(" to_mem ")"
-    if left(tdsname,1) = "'" then
-    tdsnamex = tdsnamex"'"
-  end
-
-  /* -------------------------- *
-  * Set from dsname var        *
-  * -------------------------- */
-  if length(sdsnamex) > 0 then do
-    from_dsn = sdsnamex
-  end
-  else do
-    from_dsn = sdsname
-    sdsnamex = sdsname
-  end
-
-  if pos("'",sdsnamex) > 0 then
-  if pos("(",sdsnamex) > 0 then do
-    parse value sdsname with "'" from_dsn "(" .
-    from_dsn = "'"from_dsn"'"
-  end
-  Select
-    When left(from_dsn,1) = "'" then nop
-    When left(from_dsn,1) = "/" then nop
-    When sysvar('syspref') <> null then nop
-    When sysvar('syspref') = null then
-    from_dsn = "'"from_dsn"'"
-    Otherwise nop
-  end
-
-  if length(tdsnamex) > 0 then do
-    to_dsn = tdsnamex
-    rename = "on"
-  end
-  else if mvs = "Yes" then do
-    tdsnamex = sdsnamex
-    to_dsn   = tdsnamex
-    tdsnamex = tdsnamex
-  end
-
-  if pos("'",tdsnamex) > 0 then
-  if pos("(",tdsnamex) > 0 then do
-    parse value tdsnamex with "'" to_dsn "(" to_mem .
-    to_dsn = "'"to_dsn"'"
-  end
-  /* ---- EHA MOD HFS ---- */
-  /* no uppercase with translate command */
-  /* if HFS file and MVS="yes"           */
-  if substr(tdsnamex,2,1) = '/' then nop
-  else
-  do
-    /* ---- EHA ------------ */
-    if mvs = "Yes" then do
-      if pos("\",tdsnamex) = 0 then
-      if pos("/",tdsnamex) = 0 then do
-        tdsnamex = translate(tdsnamex)
-        to_dsn   = translate(to_dsn)
-      end
-    end   /* EHA ERROR* this end was missing */
-  end
-  if length(to_mem) > 0 then to_mem = translate(to_mem)
-
-  /* -------------------------- *
-  * Test status of the source  *
-  * data set.                  *
-  * -------------------------- */
-  if pos("\",sdsnamex) = 0 then
-  if pos("/",sdsnamex) = 0 then
-  if multiple = null then do
-    /* ---- EHA ADD HFS ---- */
-    /* check if file exist   */
-    /* when it is a HFS file */
-    if substr(sdsnamex,2,1) = '/' then do
-      path = sdsnamex
-      path = STRIP(path,,"'")
-      x = syscalls('ON')      /* Z/OS REX/UNIX */
-      address syscall
-      "lstat (path) st."
-      /* lstat--pathname--stem
-      lstat invokes the lstat callable service
-      to obtain status information about a file.  */
-      x = syscalls('OFF')
-      Address ISPEXEC     /* restore environment */
-      if st.0 = 0 then do  /* 0 = notfound */
-        zedsmsg = "Source HFS Error"
-        zedlmsg = "HFS" path ,
-          "Invalid Path or file not found"
-        "Setmsg Msg(isrz001)"
-        return
-      end
-    end
-    /* ---- EHA ------------ */
-    else do
-      call listdsi sdsnamex 'dir'
-      sysreason = sysreason /* remove leading zero's */
-      if sysreason = 3 then do
-        Address ISPExec "DSInfo Dataset("sdsnamex")"
-        sysalloc   = strip(zdstota)
-        sysseconds = strip(zds2ex)
-        sp         = translate(left(strip(zdsspc),2))
-        select
-          when sp = "BL" then spx = "BLK"
-          when sp = "TR" then spx = "TRK"
-          when sp = "CY" then spx = "CYL"
-          otherwise spx = sp
+  if pos(ftpgp,'PS') > 0 then do  /* Sync */
+    /* -------------------------- *
+    * Find sending member ?      *
+    * or if multiple dsn xfer ?  *
+    * -------------------------- */
+    Select
+      when left(sdsname,1) = "/" then nop
+      when pos("(",sdsname) > 0 then do
+        parse value sdsname with sdsnamex "(" members ")"
+        Select
+          When pos(left(members,1),"-+") > 0 then call get_gdg
+          When datatype(members) = "NUM" then call get_gdg
+          Otherwise nop
         end
-        if strip(zdsdsnt) = "HFS"
-        then sysdsorg  = strip(zdsdsnt)
-        else sysdsorg  = strip(zdsorg)
-        sysadirblk = 0
+        if gdg = null then
+        if left(sdsnamex,1) = "'" then
+        sdsnamex = sdsnamex"'"
       end
-      if sysreason = 8 then do
-        sysdsorg = "PS"
-        tape_fl  = 1
+      /* ----------------------------------------------------- *
+      * Look for wildcard.                                    *
+      * - set multiple flag on                                *
+      * - if .* then make .** as df/dss requires that for     *
+      *   more than a single level                            *
+      * ----------------------------------------------------- */
+      when pos("*",sdsname) > 0 then do
+        if left(sdsname,1) = "'" then
+        sdsname = substr(sdsname,2,length(sdsname)-2)
+        if right(sdsname,2) = ".*" then do
+          sdsname = sdsname"*"
+        end
+        multiple = "on"
       end
-      if sysreason = 5 then do
-        zedsmsg = "Source DSN Error"
-        zedlmsg = "DSN" sdsname ,
-          "Invalid dsname or dsname not found"
-        "Setmsg Msg(isrz001)"
-        return
-      end
-      if length(members) > 0 then do
-        dsn_stat = sysdsn(sdsnamex)
-        if dsn_stat <> "OK" then do
-          zedsmsg = "Source DSN Error"
-          zedlmsg = "DSN:" sdsname dsn_stat
-          "Setmsg msg(isrz001)"
+      otherwise nop
+    end
+
+    /* -------------------------- *
+    * Find remote member ?       *
+    * -------------------------- */
+    if length(tdsname) > 0 then tdsnamex = tdsname
+    if pos("(",tdsname) > 0 then do
+      parse value tdsname with tdsnamex "(" to_mem ")"
+      if left(tdsname,1) = "'" then
+      tdsnamex = tdsnamex"'"
+    end
+
+    /* -------------------------- *
+    * Set from dsname var        *
+    * -------------------------- */
+    if length(sdsnamex) > 0 then do
+      from_dsn = sdsnamex
+    end
+    else do
+      from_dsn = sdsname
+      sdsnamex = sdsname
+    end
+
+    if pos("'",sdsnamex) > 0 then
+    if pos("(",sdsnamex) > 0 then do
+      parse value sdsname with "'" from_dsn "(" .
+      from_dsn = "'"from_dsn"'"
+    end
+    Select
+      When left(from_dsn,1) = "'" then nop
+      When left(from_dsn,1) = "/" then nop
+      When sysvar('syspref') <> null then nop
+      When sysvar('syspref') = null then
+      from_dsn = "'"from_dsn"'"
+      Otherwise nop
+    end
+
+    if length(tdsnamex) > 0 then do
+      to_dsn = tdsnamex
+      rename = "on"
+    end
+    else if mvs = "Yes" then
+      if pos(ftpgp,'GP') > 0 then do
+      tdsnamex = sdsnamex
+      to_dsn   = tdsnamex
+      tdsnamex = tdsnamex
+    end
+
+    if pos("'",tdsnamex) > 0 then
+    if pos("(",tdsnamex) > 0 then do
+      parse value tdsnamex with "'" to_dsn "(" to_mem .
+      to_dsn = "'"to_dsn"'"
+    end
+    /* ---- EHA MOD HFS ---- */
+    /* no uppercase with translate command */
+    /* if HFS file and MVS="yes"           */
+    if substr(tdsnamex,2,1) = '/' then nop
+    else
+    do
+      /* ---- EHA ------------ */
+      if mvs = "Yes" then do
+        if pos("\",tdsnamex) = 0 then
+        if pos("/",tdsnamex) = 0 then do
+          tdsnamex = translate(tdsnamex)
+          to_dsn   = translate(to_dsn)
+        end
+      end   /* EHA ERROR* this end was missing */
+    end
+    if length(to_mem) > 0 then to_mem = translate(to_mem)
+
+    /* -------------------------- *
+    * Test status of the Local   *
+    * data set.                  *
+    * -------------------------- */
+    if pos("\",sdsnamex) = 0 then
+    if pos("/",sdsnamex) = 0 then
+    if multiple = null then do
+      /* ---- EHA ADD HFS ---- */
+      /* check if file exist   */
+      /* when it is a HFS file */
+      if substr(sdsnamex,2,1) = '/' then do
+        path = sdsnamex
+        path = STRIP(path,,"'")
+        x = syscalls('ON')      /* Z/OS REX/UNIX */
+        address syscall
+        "lstat (path) st."
+        /* lstat--pathname--stem
+        lstat invokes the lstat callable service
+        to obtain status information about a file.  */
+        x = syscalls('OFF')
+        Address ISPEXEC     /* restore environment */
+        if st.0 = 0 then do  /* 0 = notfound */
+          zedsmsg = "Local HFS Error"
+          zedlmsg = "HFS" path ,
+            "Invalid Path or file not found"
+          "Setmsg Msg(isrz001)"
           return
         end
       end
+      /* ---- EHA ------------ */
+      else do
+        call listdsi sdsnamex 'dir'
+        sysreason = sysreason /* remove leading zero's */
+        if sysreason = 3 then do
+          Address ISPExec "DSInfo Dataset("sdsnamex")"
+          sysalloc   = strip(zdstota)
+          sysseconds = strip(zds2ex)
+          sp         = translate(left(strip(zdsspc),2))
+          select
+            when sp = "BL" then spx = "BLK"
+            when sp = "TR" then spx = "TRK"
+            when sp = "CY" then spx = "CYL"
+            otherwise spx = sp
+          end
+          if strip(zdsdsnt) = "HFS"
+          then sysdsorg  = strip(zdsdsnt)
+          else sysdsorg  = strip(zdsorg)
+          sysadirblk = 0
+        end
+        if sysreason = 8 then do
+          sysdsorg = "PS"
+          tape_fl  = 1
+        end
+        if sysreason = 5 then do
+          zedsmsg = "From DSN Error"
+          zedlmsg = "DSN" sdsname ,
+            "Invalid dsname or dsname not found"
+          "Setmsg Msg(isrz001)"
+          return
+        end
+        if length(members) > 0 then do
+          dsn_stat = sysdsn(sdsnamex)
+          if dsn_stat <> "OK" then do
+            zedsmsg = "From DSN Error"
+            zedlmsg = "DSN:" sdsname dsn_stat
+            "Setmsg msg(isrz001)"
+            return
+          end
+        end
+      end
     end
   end
 
   /* -------------------------- *
-  * Check target Hostname      *
+  * Check remote Hostname      *
   * -------------------------- */
   shost = thost
   if thost = "?" then call get_hostname
@@ -708,56 +718,15 @@ Do_It:
     "Rempop"
   end
 
-  /* ---------------------------------------------------------- *
-  * Get a unique id character for the job card along with the  *
-  * userid and account number information.                     *
-  * ---------------------------------------------------------- */
-  call get_jobid
+  call setup_jcl
 
-  "Vget (lj1 lj2 lj3 lj4) Profile"
-
-  /* -------------------------- *
-  * Setup Default Job Card     *
-  * -------------------------- */
-  if lj1 = null then call set_initial_jobcard
-
-  /* -------------------------- *
-  * Add comments to job        *
-  * -------------------------- */
-  call setup_local_jobcard
-  ftp.5  = "//*-----------------------------------------------*"
-  ftp.6  = "//*    FTP Batch JCL Generated by FTPB Dialog     *"
-  datex = left(date(),11)
-  timex = left(time(),8)
-  ftp.7 =  "//*    Release" ftpbver "on" datex "at" timex "  *"
-  ftp.8  = "//*-----------------------------------------------*"
-  ftp.0  = 8
-
-  /* -------------------------- *
-  * setup reload job card      *
-  * -------------------------- */
-  if rj1 = null then do
-    load.1 = ftp.1
-    load.2 = ftp.2
-    load.3 = ftp.3
-    load.4 = ftp.4
+  /* ------------------------- *
+  | Perform the GET operation |
+  * ------------------------- */
+  if ftpgp = 'G' then do
+    call do_get
+    return
   end
-  else call setup_remote_jobcard
-  load.5 = "//*-----------------------------------------------*"
-  load.6 = "//*    FTP ReLoad JCL Generated by FTPB Dialog    *"
-  load.7 = "//*    Release" ftpbver "on" datex "at" timex "  *"
-  load.8 = "//*-----------------------------------------------*"
-  load.0 = 8
-
-  lj1 = ftp.1
-  lj2 = ftp.2
-  lj3 = ftp.3
-  lj4 = ftp.4
-
-  rj1 = load.1
-  rj2 = load.2
-  rj3 = load.3
-  rj4 = load.4
 
   /* -------------------------- *
   * If the pds is a pdse then  *
@@ -795,9 +764,10 @@ Do_It:
   else site_sp = sp
 
   /* -------------------------- *
-  * Set target dsname          *
+  * Set remote dsname          *
   * -------------------------- */
-  if length(to_dsn) = 0 then do
+  if length(to_dsn) = 0 then
+    if ftpgp /= 'S' then do
     if mvs = "Yes"
     then targ_dsn = from_dsn
     else targ_dsn = to_dsn
@@ -883,7 +853,7 @@ Do_It:
     When sysdsorg = "PO" then do
       if sysrecfm <> "U" then
       unl = "No"
-      if mvs = 'Sync' then do
+      if ftpgp = 'S' then do /* Sync */
         call set_ftp
         call do_local_jcl
         call do_sync
@@ -1114,7 +1084,7 @@ Do_It:
   /* ---------------------------------------------------------- *
   * Begin the transfer process.                                *
   *                                                            *
-  * if mhost is not null then we have multiple target hosts    *
+  * if mhost is not null then we have multiple remote hosts    *
   * ---------------------------------------------------------- */
   if mhst = null then do
     Call do_ftp
@@ -1496,10 +1466,10 @@ Set_FTP:
     if usernrc = null then do
       nn = nn + 1
       ftp.nn = ,
-      "//* The NETRC Dataset will be allocated with the Submit dialog"
+        "//* The NETRC Dataset will be allocated with the Submit dialog"
       nn = nn + 1
       ftp.nn = ,
-      "//* option to protect your password."
+        "//* option to protect your password."
       nn = nn + 1
       ftp.nn = "//NETRC     DD  DISP=(OLD,DELETE,DELETE),"
       nn = nn + 1
@@ -1589,7 +1559,7 @@ Set_FTP:
   return
 
   /* ---------------------------------------------------- *
-  * If the target name contains directories              *
+  * If the remote name contains directories              *
   * change to each one in turn, before putting the file. *
   * ---------------------------------------------------- */
 Set_CD:
@@ -2447,7 +2417,7 @@ Fix_Send_DSN:
 
   /* ------------------------------------------------------------- *
   * Fix_FTP is a routine to change the thost to the multi host    *
-  * when multiple target hostnames are used                       *
+  * when multiple remote hostnames are used                       *
   * ------------------------------------------------------------- */
 Fix_FTP:
   /* ------------------------------------------------------------- *
@@ -2754,6 +2724,9 @@ Setup_Remote_Jobcard:
     rj3 = ftp.3
     rj4 = ftp.4
   end
+  if userid = null then
+     if usernrc /= null
+     then userid = get_nrc_uid()
   parse value rj1 with "//" jobname "JOB" rest
   Uuserid = translate(userid)
   if forcejbn = "Y" then do
@@ -2834,7 +2807,7 @@ Save_Remote_Jobcard:
 
   /* ------------------------------------------------------------- *
   * Get_Hostname routine.                                         *
-  * Used when the user enters a ? on the target Hostname field    *
+  * Used when the user enters a ? on the remote Hostname field    *
   * to display the current set of used hostnames from which to    *
   * select.                                                       *
   * Optionally:                                                   *
@@ -2981,6 +2954,29 @@ Get_Hostname:
     end
   end
   call save_thost_table
+  return
+
+  /* --------------------- *
+  | Get Userid from NETRC |
+  * --------------------- */
+Get_NRC_Uid:
+  Address TSO
+  nrcdd = 'NRC'random(9999)
+  'Alloc f('nrcdd') shr reuse ds('usernrc')'
+  'Execio * diskr' nrcdd '(finis stem nrc.'
+  'Free f('nrcdd')'
+  Address ISPExec
+  do ni = 1 to nrc.0
+    if translate(word(nrc.ni,1)) = 'MACHINE' then do
+      nrcip = word(nrc.ni,2)
+      nrcuid = word(nrc.ni,4)
+    end
+    if nrcip = thost then do
+      drop nrc.
+      return nrcuid
+    end
+  end
+  drop nrc.
   return
 
 Create_Table:
@@ -3266,9 +3262,9 @@ Do_Find:
   end
   return
 
-/* ------------------------------ *
- | 2 line popup for notifications |
- * ------------------------------ */
+  /* ------------------------------ *
+  | 2 line popup for notifications |
+  * ------------------------------ */
 Do_Pop2:
   'Control Display Lock'
   'addpop'
@@ -3277,9 +3273,9 @@ Do_Pop2:
   parse value '' with m1 m2
   return
 
-/* ------------------------------ *
- | 4 line popup for notifications |
- * ------------------------------ */
+  /* ------------------------------ *
+  | 4 line popup for notifications |
+  * ------------------------------ */
 Do_Pop4:
   'Control Display Lock'
   'addpop'
@@ -3288,9 +3284,9 @@ Do_Pop4:
   parse value '' with m1 m2 m3 m4
   return
 
-/* ----------------------------------- *
- | Check if the target dataset exists? |
- * ----------------------------------- */
+  /* ----------------------------------- *
+  | Check if the remote dataset exists? |
+  * ----------------------------------- */
 Check_Remote:
   arg test_dsn
   drop ftpx.
@@ -3307,9 +3303,9 @@ Check_Remote:
   end
   return 0
 
-/* ------------------------------ *
- | Process the FTP command online |
- * ------------------------------ */
+  /* ------------------------------ *
+  | Process the FTP command online |
+  * ------------------------------ */
 Do_FTPx:
   Address TSO
   if usernrc /= null
@@ -3331,6 +3327,10 @@ Do_FTPx:
   'free f(input output netrc)'
   return
 
+  /* ---------------------------------------------------------- *
+  | Perform a Sync between two partitioned datasets, one local |
+  | and the other remote.                                      |
+  * ---------------------------------------------------------- */
 Do_Sync:
   lpds = test_sdsname
   rpds = tdsname
@@ -3347,6 +3347,82 @@ Do_Sync:
   call proc_member_list
   return
 
+  /* ---------------------------------------------------------- *
+  | Perform a GET operation by providing a list of datasets on |
+  | the remote site allowing the user to select one, or more,  |
+  | datasets to retrieve.                                      |
+  * ---------------------------------------------------------- */
+Do_Get:
+  gdsname = strip(sdsname)
+  if left(gdsname,1) = "'" then
+     gdsname = strip(gdsname,'B',"'")
+  if right(gdsname,3) = '.**' then
+  gdsname = "'"left(gdsname,length(gdsname)-3)"'"
+  m1 = 'Getting a list of all members from both'
+  m2 = 'the local and remote systems.'
+  call do_pop2
+  call get_dataset_list
+  return
+
+  /* ------------------------- *
+  | Setup the JCL for the FTP |
+  * ------------------------- */
+Setup_JCL:
+  /* ---------------------------------------------------------- *
+  * Get a unique id character for the job card along with the  *
+  * userid and account number information.                     *
+  * ---------------------------------------------------------- */
+  call get_jobid
+
+  "Vget (lj1 lj2 lj3 lj4) Profile"
+
+  /* -------------------------- *
+  * Setup Default Job Card     *
+  * -------------------------- */
+  if lj1 = null then call set_initial_jobcard
+
+  /* -------------------------- *
+  * Add comments to job        *
+  * -------------------------- */
+  call setup_local_jobcard
+  ftp.5  = "//*-----------------------------------------------*"
+  ftp.6  = "//*    FTP Batch JCL Generated by FTPB Dialog     *"
+  datex = left(date(),11)
+  timex = left(time(),8)
+  ftp.7 =  "//*    Release" ftpbver "on" datex "at" timex "  *"
+  ftp.8  = "//*-----------------------------------------------*"
+  ftp.0  = 8
+
+  /* -------------------------- *
+  * setup reload job card      *
+  * -------------------------- */
+  if rj1 = null then do
+    load.1 = ftp.1
+    load.2 = ftp.2
+    load.3 = ftp.3
+    load.4 = ftp.4
+  end
+  else call setup_remote_jobcard
+  load.5 = "//*-----------------------------------------------*"
+  load.6 = "//*    FTP ReLoad JCL Generated by FTPB Dialog    *"
+  load.7 = "//*    Release" ftpbver "on" datex "at" timex "  *"
+  load.8 = "//*-----------------------------------------------*"
+  load.0 = 8
+
+  lj1 = ftp.1
+  lj2 = ftp.2
+  lj3 = ftp.3
+  lj4 = ftp.4
+
+  rj1 = load.1
+  rj2 = load.2
+  rj3 = load.3
+  rj4 = load.4
+  return
+
+  /* ---------------------------------- *
+  | Check if the remote dataset exists |
+  * ---------------------------------- */
 Check_Remote_Dataset:
   arg test_dsn
   new = null
@@ -3361,6 +3437,186 @@ Check_Remote_Dataset:
   if rc > 4 then return 4
   return 0
 
+  /* --------------------------------------------------------- *
+  | Get a list of all datasets on the remote site and allow   |
+  | the user to select those datasets to pull (ftp get) back. |
+  * --------------------------------------------------------- */
+Get_Dataset_list:
+  test_gdsname = translate(gdsname,' ','.')
+  if words(test_gdsname) > 1 then do
+  check_gdsname = word(test_gdsname,words(test_gdsname))
+  test_gdsname = subword(test_gdsname,1,words(test_gdsname)-1)
+  end
+  else check_gdsname = null
+  test_gdsname = translate(test_gdsname,'.',' ')
+  check_glen = length(check_gdsname)
+
+  ftpx.1 = 'cd' "'"test_gdsname"'"
+  ftpx.2 = 'dir'
+  ftpx.3 = 'quit'
+
+  call do_ftpx
+
+  ghit = 0
+  max_used = 0
+  gdsname = strip(test_gdsname,,"'")
+  gdsnlen = length(test_gdsname) + 1
+  gtab = 'ftpb'random(9999)
+  'tbcreate' gtab 'names(gdsn gact gvol gused grecfm glrecl gblksize gdsorg)' ,
+    'nowrite'
+  do gdx = 1 to out.0
+    if subword(out.gdx,2,2) = 'Volume Unit' then leave
+  end
+  gcount = 0
+  gact = null
+  do gdi = gdx+1 to out.0
+    if subword(out.gdi,2,2) = 'List completed' then leave
+    parse value out.gdi with xm gvol xu grefd . gused grecfm glrecl gblksize  ,
+      gdsorg gdsn
+    gdsn = strip(gdsn)
+    if gdsn = null then iterate
+    if left(gdsn,check_glen) /= check_gdsname then iterate
+    gdsn = gdsname'.'strip(gdsn)
+    if gused > max_used then max_used = gused
+    'tbadd' gtab
+    gcount = gcount + 1
+  end
+
+  if gcount = 0 then do
+     'tbend' gtab
+     zedsmsg = 'No Datasets.'
+     zedlmsg = 'No Datasets were found with the provided HLQ of' gdsname
+
+     'Setmsg msg(isrz001)'
+     return
+     end
+
+  'tbsort' gtab  'field(gdsn,ch,a)'
+  'tbtop'  gtab
+  gtdsels = 0
+  get_count = 0
+  do forever
+    gsel = null
+    if gtdsels = 0 then
+    'tbdispl' gtab 'panel(ftpbrdsl)'
+    else 'tbdispl' gtab
+    if rc > 4 then leave
+    gtdsels = ztdsels
+
+    if zcmd /= null then
+    Select
+      When Abbrev("REFRESH",translate(zcmd),3) = 1 then do
+        'tbend' gtab
+        call get_dataset_list
+        return
+      end
+      When Abbrev("CANCEL",translate(zcmd),3) = 1 then do
+        'tbend' gtab
+        zedsmsg = 'Canceled.'
+        zedlmsg = 'Get process cancelled.'
+        'setgmsg msg(isrz001)'
+        return
+      end
+      otherwise nop
+    end
+
+    if gsel /= null then do
+      Select
+        When gsel = 'S' then do
+          if wordpos(gdsorg,'PS PO') = 0 then do
+            zedsmsg = 'Not Supported.'
+            zedlmsg = 'The selected dataset dsorg is not supported.'
+            'setmsg msg(isrz001)'
+          end
+          else do
+            gact = 'Select'
+            get_count = get_count + 1
+          end
+        end
+        When gsel = 'U' then
+        if gact /= null then do
+          gact = null
+          if get_count > 0 then
+          get_count = get_count - 1
+        end
+        Otherwise nop
+      end
+      'tbput' gtab
+    end
+  end
+
+  if get_count > 0 then do
+    'vget (mgen) profile'
+    if tdsname /= null then newhlq = tdsname
+    if datatype(mgen) /= 'NUM' then mgen = 0
+    'Display Panel(ftpbrdsp)'
+    'vput (mgen) profile'
+    call setup_jcl
+    call set_ftp
+    gftpc = ftp.0
+    'tbtop' gtab
+    do forever
+      'tbskip' gtab
+      if rc > 0 then leave
+      if gact = null then iterate
+      rep = null
+      if gdsorg = 'PO' then do
+        call fix_get_dsn
+        if sysdsn("'"newdsn"'") /= 'OK'
+        then call alloc_get_dsn
+        else rep = '(Replace'
+        gftpc = gftpc + 1
+        ftp.gftpc = 'cd' "'"gdsn"'"
+        gftpc = gftpc + 1
+        ftp.gftpc = 'lcd' "'"newdsn"'"
+        gftpc = gftpc + 1
+        ftp.gftpc = 'mget *' rep
+      end
+      else do
+        call fix_get_dsn
+        if sysdsn("'"newdsn"'") /= 'OK'
+        then call alloc_get_dsn
+        gftpc = gftpc + 1
+        ftp.gftpc = 'get' "'"gdsn"' '"newdsn"' (Replace"
+      end
+    end
+    gftpc = gftpc + 1
+    ftp.gftpc = 'quit'
+    ftp.0 = gftpc
+    tdsnamex = newhlq
+    call do_ftp
+  end
+
+  'tbend' gtab
+  Return
+
+  /* ----------------------------------------------------- *
+  | Fix up the local dataset name using the new local hlq |
+  | provided.                                             |
+  * ----------------------------------------------------- */
+Fix_Get_DSN:
+  newdsn = newhlq''substr(gdsn,gdsnlen)
+  return
+
+  /* ------------------------------------------------ *
+  | Allocate the local dataset for the GET operation |
+  * ------------------------------------------------ */
+alloc_get_dsn:
+  if gdsorg = 'PO' then do
+    pdse =  "dsntype(library,2) maxgens("mgen") dsorg(po) dir(1)"
+  end
+  else pdse = 'dsorg(ps)'
+  Address TSO ,
+    "Alloc ds('"newdsn"') new spa("gused","gused") tr" ,
+    "recfm("strip(left(grecfm,1) substr(grecfm,2,1) substr(grecfm,3,1))")" ,
+    'lrecl('glrecl') blksize('gblksize')' pdse
+  Address TSO ,
+    "Free ds('"newdsn"')"
+  return
+
+  /* -------------------------------------------- *
+  | Get the list of all members local and remote |
+  * -------------------------------------------- */
 Get_Member_Lists:
   mult = 1
   ftpx.1 = 'cd' rpds
@@ -3380,7 +3636,7 @@ Get_Member_Lists:
 
   drop mem.
   mem. = null
- /* Process remote PDS directory from FTP Log */
+  /* Process remote PDS directory from FTP Log */
   do i = 1 to out.0
     if pos('VV.MM',out.i) > 0 then leave
   end
@@ -3409,7 +3665,7 @@ Get_Member_Lists:
     mem.0 = mem.0 member
     mem.member = chg_date chg_time rsize
   end
- /* Process the local PDS directory from trap */
+  /* Process the local PDS directory from trap */
   ftp_table = 'FT'random(99999)
   'tbcreate' ftp_table 'names(fmem fstate ldate ltime lsize' ,
     'rdate rtime rsize) nowrite'
@@ -3432,10 +3688,10 @@ Get_Member_Lists:
       if strip(chg_date) /= null then  do
         chg_date = left(chg_date,2)''substr(chg_date,4,2)''right(chg_date,2)
         year = left(chg_date,2)
-   /* ------------------------------------------------------------- *
-    | Convert the PDS result 2 digit year to a 4 digit year.        |
-    | If the year is < 80 then the century is 20 otherwise it is 19 |
-    * ------------------------------------------------------------- */
+        /* ------------------------------------------------------------- *
+        | Convert the PDS result 2 digit year to a 4 digit year.        |
+        | If the year is < 80 then the century is 20 otherwise it is 19 |
+        * ------------------------------------------------------------- */
         if year < 80
         then chg_date = '20'chg_date
         else chg_date = '19'chg_date
@@ -3508,18 +3764,18 @@ Get_Member_Lists:
   end
 
   do i = 1 to words(mem.0)
-     fmem = word(mem.0,i)
-     if wordpos(fmem,members) > 0 then iterate
-     parse value mem.fmem with rdate rtime rsize
-      rdate = left(rdate,4)''substr(rdate,6,2)''right(rdate,2)
-      rtime = word(out.ip,off+4)
-      rsize = word(out.ip,off+5)
-      fstate = 'GET'
-      transfer_count = transfer_count + 1
-      transfer.0 = transfer.0 fmem
-      transfer.fmem = fstate
-      'tbadd' ftp_table
-     end
+    fmem = word(mem.0,i)
+    if wordpos(fmem,members) > 0 then iterate
+    parse value mem.fmem with rdate rtime rsize
+    rdate = left(rdate,4)''substr(rdate,6,2)''right(rdate,2)
+    rtime = word(out.ip,off+4)
+    rsize = word(out.ip,off+5)
+    fstate = 'GET'
+    transfer_count = transfer_count + 1
+    transfer.0 = transfer.0 fmem
+    transfer.fmem = fstate
+    'tbadd' ftp_table
+  end
 
   'tbtop' ftp_table
   'tbsort' ftp_table 'fields(fmem,ch,a)'
@@ -3701,9 +3957,7 @@ Proc_Member_List:
     return
   end
   drop ftpx.
-  ftpx.1 = 'mode b'
-  ftpx.2 = 'type e'
-  ftpc = 2
+  ftpc = 0
   if new = 'Yes' then do
     ftpc = ftpc + 1
     allocu = left(sysunits,1)
@@ -3782,16 +4036,16 @@ Proc_Member_List:
 
   return
 
-/*PATMATCH - copied from CBT file 656 by LBD 01-23-2021 ***************/
-/*-Start of PATMATCH function---------------------------Version-01.01-*/
-/*:PATMATCH function - Performs ISPF-type pattern matching on a pair  */
-/* of strings: 1st string is the pattern, 2nd is the data.            */
-/* Example: rc=PATMATCH('*EFG*','ABCDEFGH')                           */
-/* Returns: 0:    Pattern does not match the data.                    */
-/*          1:    Pattern does match the data.                        */
-/*          text: Error occured, text gives the details.              */
-/* Copyright (C) 1996, 1998 Washington Systems. All rights reserved.  */
-/*--------------------------------------------------------------------*/
+  /*PATMATCH - copied from CBT file 656 by LBD 01-23-2021 ***************/
+  /*-Start of PATMATCH function---------------------------Version-01.01-*/
+  /*:PATMATCH function - Performs ISPF-type pattern matching on a pair  */
+  /* of strings: 1st string is the pattern, 2nd is the data.            */
+  /* Example: rc=PATMATCH('*EFG*','ABCDEFGH')                           */
+  /* Returns: 0:    Pattern does not match the data.                    */
+  /*          1:    Pattern does match the data.                        */
+  /*          text: Error occured, text gives the details.              */
+  /* Copyright (C) 1996, 1998 Washington Systems. All rights reserved.  */
+  /*--------------------------------------------------------------------*/
 PATMATCH: Procedure
 
   IF ARG() <> 2 THEN RETURN 'PATMATCH ERROR: 2 parms required, caller',
@@ -3849,4 +4103,4 @@ PATMATCH: Procedure
   IF wild = 1                        /* Did pattern end with wild card? */
   THEN RETURN 1                      /* Yes, that's a match.            */
   ELSE RETURN 0                      /* Else, sorry, not a match.       */
-/*-End of PATMATCH function-------------------------------------------*/
+  /*-End of PATMATCH function-------------------------------------------*/

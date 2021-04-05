@@ -22,11 +22,11 @@
 +   Directory:     _direct`        Directory blocks
 +                                  # for PDS, P for PDSE, or blank for PS
 +Optional:
-+   Device:        %tunit   `      Target device or esoteric
-+   Volser:        %tvol  `        Target volser
-+   DATAClass      %tdclas  `      Target SMS Data Class
-+   MGMTCLAS       %tmclas  `      Target SMS Management Class
-+   STORCLAS       %tSclas  `      Target SMS Storage Class
++   Device:        %tunit   `      Remote device or esoteric
++   Volser:        %tvol  `        Remote volser
++   DATAClass      %tdclas  `      Remote SMS Data Class
++   MGMTCLAS       %tmclas  `      Remote SMS Management Class
++   STORCLAS       %tSclas  `      Remote SMS Storage Class
 +
 )Init
   &sp = trans(trunc(&sp,1) B,Blocks T,TRK C,CYL)

@@ -6,14 +6,14 @@
 +-\-\%FTPB Sync#ver  +\-\-
 +Command ===>_zcmd   \ \+Scroll ===>_fscr+
 +
-+Source PDS :#lpds
-+Target PDS :#rpds
-+Target Host:#thost                                          +Port:#thport
++Local PDS :#lpds
++Remote PDS :#rpds
++Remote Host:#thost                                          +Port:#thport
 +
 +Commands:%Locate string+%ONLY+only selected%CLEAR+clear selected
-+Select Options:%G+Get%P+Put%I+Ignore%D+Delete Target%B+Browse local%C+Compare
++Select Options:%G+Get%P+Put%I+Ignore%D+Delete Remote%B+Browse local%C+Compare
 +
-%S +Member    Action   Source Date Time     Size  Target Date Time     Size
+%S +Member    Action   Local Date  Time     Size  Remote Date Time     Size
 )Model
 @z+#fmem    +#fstate  #ldate      #ltime`lsize  +#rdate      #rtime`rsize  +
 )Init

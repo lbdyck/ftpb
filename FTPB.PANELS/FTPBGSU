@@ -14,7 +14,7 @@
 % BL-~Browse+the generated Load JCL job  %EL-~Edit+the generated Load JCL job
 %                  S -~Submit+the generated FTP job
 +
-~    Target host: @thost
+~    Remote host: @thost
 +
 %Review/Update:                                        ~See Help for more info+
 +     Local Batch Job Card:

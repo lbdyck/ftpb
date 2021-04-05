@@ -14,8 +14,11 @@
 %
 + This ISPF Dialog is designed to simplify the use of IBM's TCP/IP File
 + Transfer Protocol (FTP) for transferring files from the current z/OS
-+ system to another TCP/IP enabled system.  Press~ENTER+to continue to
-+ the next tutorial panel.
++ system to another TCP/IP enabled system, synchronizing two partitioned
++ datasets between two sites, or retrieving datasets from a remote z/OS
++ site.
++
++ Press~ENTER+to continue to the next tutorial panel.
 +
 + Field level help is available on the primary FTPB Panel by moving the
 + cursor to the field in question and pressing PF1 (HELP).

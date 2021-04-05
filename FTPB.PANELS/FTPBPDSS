@@ -12,7 +12,7 @@
 +   DFSMSdss (ADRDSSU) will be used to unload the selected data set(s) for
 +   transfer using FTP and used there for the reload.
 +
-+   Remote Work Data Set HLQ%===>$whlq                         + Target Node
++   Remote Work Data Set HLQ%===>$whlq                         + Remote Node
 +                                                                optional
 +   DFSMSdss options:
 +
@@ -35,7 +35,7 @@
  &vrp = trans(trunc(&vrp,1) &z,Yes Y,Yes N,No y,Yes n,No)
  &otenq = trans(trunc(&otenq,1) &z,No Y,Yes N,No y,Yes n,No)
 )PROC
- ver (&whlq,dsname)
+ ver (&whlq,nb,dsname)
  &vex = trans(trunc(&vex,1) Y,Yes N,No y,Yes n,No *,*)
  ver (&vex,nb,list,Yes,No)
  &val = trans(trunc(&val,1) A,All U,Used a,All u,Used)

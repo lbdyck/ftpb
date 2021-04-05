@@ -1,0 +1,42 @@
+)Attr Default(%+_)
+/* % type(text  ) intens(high)              Defaults displayed for */
+/* + type(text  ) intens(low )                   information only  */
+/* _ type( input) intens(high) caps(on ) just(left )               */
+   ! type( input) intens(high) caps(on ) just(left ) hilite(uscore)
+   @ type(output) intens(low ) caps(off) just(left )
+   $ type(output) intens(low ) caps(off) just(left ) color(yellow)
+   ~ type(text) intens(high) color(blue) hilite(reverse)
+   ` type(text) intens(high) color(red)
+)Body  Expand(//)
+%-/-/- ~FTP Get Dataset Specifications+ -/-/-
+%Command ===>_zcmd
+%
+%Processing remote datasets with hlq of:@sdsname
+%
++Local Dataset Options for%Get+processing:
++
++  Local HLQ to use: !newhlq                       +
++    (will replace the remote hlq)
++
++  PDSE Maxgen:!mgen +   System Max:$dfamgen +
++
++Notes:   1. All local partitioned datasets will be pre-allocated if they
++            do not currently exist
++         2. If the local dataset exists then (REPLACE will be used on the
++            FTP GET command)
++
+)Init
+  .help = ftpbrdsh
+*Rexx(*)
+/* ---------- rexx ------------- *
+ * Get the current MAXGENS_LIMIT *
+ * ----------------------------- */
+ NUMERIC DIGITS 10
+ CVT      = C2D(Storage(10,4))
+ CVTDFA   = C2D(Storage(D2X(CVT + 1216),4))   /* cvt + 4c0 */
+ DFAMGEN  = C2D(Storage(D2X(cvtdfa + 76),4))  /* dfa + 4c */
+*Endrexx
+)Proc
+  ver (&newhlq,nb,dsname)
+  ver (&mgen,nb,range,0,&dfamgen)
+)End

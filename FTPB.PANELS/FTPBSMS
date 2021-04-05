@@ -2,14 +2,14 @@
  @ Type(input ) hilite(uscore) caps(on) intens(low)
  + type(text  ) intens(low) skip(on)
  # Type(output) skip(on)
-)Body Window(63,10) Expand(\\)
+)Body Window(64,10) Expand(\\)
 +Select Sort Criteria: (any non-blank)
 +
-+Primary Sort: @z+Member @z+State @z+Local Date @z+Local Time
++Primary Sort: @z+Member @z+Action @z+Local Date @z+Local Time
 +              @z+Remote Date @z+Remote Time
 +Primary Sort Order: @z+ A:Ascending D:Descending
 +
-+Secondary Sort: @z+Member @z+State @z+Local Date @z+Local Time
++Secondary Sort: @z+Member @z+Action @z+Local Date @z+Local Time
 +                @z+Remote Date @z+Remote Time
 +Secondary Sort Order: @z+ A:Ascending D:Descending
 +

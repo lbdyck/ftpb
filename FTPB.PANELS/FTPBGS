@@ -16,7 +16,7 @@
 %    S -~Submit+the generated FTP job
 %    X -~eXecute+FTP~now+in the foreground
 +
-~    Target host: @thost
+~    Remote host: @thost
 +
 %Review/Update:
 +     Local Batch Job Card:

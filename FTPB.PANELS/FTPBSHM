@@ -3,7 +3,7 @@
 +Tutorial\-\%FTPB Member Selection+\-\Tutorial
 +Command ===>_zcmd
 +
-+FTPB Sync compares the ISPF statistics of the Source and the Target
++FTPB Sync compares the ISPF statistics of the Local and the Remote
 +Partitioned Datasets (PDS/PDSE) to present a table of all members with
 +a suggested action (GET or PUT) along with the members last changed
 +date and time for easy comparison.

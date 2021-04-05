@@ -51,7 +51,7 @@
 ~        This option allows you to update the generated JCL and IEBCOPY
 ~        instructions.  WIth this option you can alter the JCL, for
 ~        example, you could change the unit type for the allocation of the
-~        target data set.
+~        remote data set.
 ~
 %    S -+Submit~the generated FTP job
 ~
@@ -67,7 +67,7 @@
 ~    submitted and executed on the local system to unload and transfer
 ~    the data set.  The second (bottom) set of JOB statements will be
 ~    submitted using FTP after the data set has been transferred and
-~    executed at the target site.
+~    executed at the remote site.
 +
 ` Submitted JOB's SYSOUT Information
 ~

@@ -33,7 +33,7 @@
 ~
 % Replace the data set(s) during reload:
 ~
-~%Yes~means that if the dataset exists at the target site already that
+~%Yes~means that if the dataset exists at the remote site already that
 ~ you want to replace it with this transfer
 ~
 ~%No~means that if the dataset already exists to leave it alone and
