@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.001"
+  ftpbver = "2.002"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,9 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            04/06/2021  - 2.002  - Improve ADRDSSU processing  *
+  *                                   COMPRESS -> HWCOMPRESS and  *
+  *                                   add OPTIMIZE(4)             *
   *            04/06/2021  - 2.001  - Correct GET newhlq          *
   *            04/02/2021  - 2.000  - Move SYNC option to         *
   *                                   Direction                   *
@@ -1884,7 +1887,9 @@ build_dump:
     ftp.nn = "       SHARE TOL(ENQF) -"
   end
   nn = nn + 1
-  ftp.nn = "       COMPRESS - "
+  ftp.nn = "       HWCOMPRESS - "
+  nn = nn + 1
+  ftp.nn = "       OPTIMIZE(4)- "
   nn = nn + 1
   if multiple <> "on" then
   ftp.nn = "       DATASET(INCLUDE("strip(send_dsn,,"'")"))"
