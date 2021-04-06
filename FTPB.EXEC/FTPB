@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.000"
+  ftpbver = "2.001"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            04/06/2021  - 2.001  - Correct GET newhlq          *
   *            04/02/2021  - 2.000  - Move SYNC option to         *
   *                                   Direction                   *
   *                                 - Term change Source->From    *
@@ -3595,7 +3596,13 @@ Get_Dataset_list:
   | provided.                                             |
   * ----------------------------------------------------- */
 Fix_Get_DSN:
-  newdsn = newhlq''substr(gdsn,gdsnlen)
+  wold = translate(sdsname,' ','.')
+  wnew = translate(newhlq,' ','.')
+  wold = words(wold)
+  wneww = words(wnew)
+  gdsnw = translate(gdsn,' ','.')
+  newdsn = wnew subword(gdsnw,wneww+1)
+  newdsn = translate(newdsn,'.',' ')
   return
 
   /* ------------------------------------------------ *
