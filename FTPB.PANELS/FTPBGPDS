@@ -1,0 +1,17 @@
+)Attr
+ _ type(input) hilite(uscore) caps(on) intens(low)
+ @ type(output) intens(low)
+)Body Window(67,6)
++Dataset:@gdsn                                        +
++is a partitioned dataset but FTPB is unable to determine if it
++is a PDS or a PDSE.
++
++PDS or PDSE:_gpdse+blank for PDSE or # of directory blocks to use.
++or%F3+to default to PDSE.
+)Init
+ &gpdse = &z
+ &zwinttl = 'PDS or PDSE Prompt'
+)Proc
+if (&gpdse NE &Z)
+   ver (&gpdse,num)
+)End

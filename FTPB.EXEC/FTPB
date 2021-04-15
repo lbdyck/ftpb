@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.002"
+  ftpbver = "2.003"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            04/15/2021  - 2.003  - On Get prompt if DSORG=U    *
+  *                                   for PDS or PDSE             *
   *            04/06/2021  - 2.002  - Improve ADRDSSU processing  *
   *                                   COMPRESS -> HWCOMPRESS and  *
   *                                   add OPTIMIZE(4)             *
@@ -3615,9 +3617,20 @@ Fix_Get_DSN:
   * ------------------------------------------------ */
 alloc_get_dsn:
   if gdsorg = 'PO' then do
-    pdse =  "dsntype(library,2) maxgens("mgen") dsorg(po) dir(1)"
+    gpdse = null
+    if grecfm = 'U' then do
+       'addpop'
+       'display panel(ftpbgpds)'
+       frc = rc
+       'rempop'
+       if frc > 0 then gpdse = null
+       end
+    if gpdse /= null
+    then pdse =  "dsorg(po) dir("gpdse")"
+    else pdse =  "dsntype(library,2) maxgens("mgen") dsorg(po) dir(1)"
   end
-  else pdse = 'dsorg(ps)'
+  if gdsorg = 'PS'
+  then pdse = 'dsorg(ps)'
   Address TSO ,
     "Alloc ds('"newdsn"') new spa("gused","gused") tr" ,
     "recfm("strip(left(grecfm,1) substr(grecfm,2,1) substr(grecfm,3,1))")" ,
