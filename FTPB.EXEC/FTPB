@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.003"
+  ftpbver = "2.005"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,9 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            04/16/2021  - 2.005  - Add port to ftpjobcd table  *
+  *                                   key                         *
+  *            04/15/2021  - 2.004  - Use MVSGET for FTPB GET     *
   *            04/15/2021  - 2.003  - On Get prompt if DSORG=U    *
   *                                   for PDS or PDSE             *
   *            04/06/2021  - 2.002  - Improve ADRDSSU processing  *
@@ -2720,6 +2723,8 @@ Setup_Remote_Jobcard:
   parse value "" with rj1 rj2 rj3 rj4
   "TBOpen ftpjobcd Write Library(ISPPROF)"
   if rc = 8 then call create_table
+  'tbquery ftpjobcd keys(tkeys)'
+  if pos('TARGPORT',tkeys) = 0 then call update_ftpjobcd_table
   "TBTop ftpjobcd"
   do forever
     "TBSkip ftpjobcd"
@@ -2757,14 +2762,14 @@ Setup_Remote_Jobcard:
   load.4 = rj4
   tbput_rc = 0
   if targhost = thost then do
-    "TBPut   ftpjobcd save(targport targtls)"
+    "TBPut   ftpjobcd"
     tbput_rc = 4
   end
   if tbput_rc = 4 then
   if left(thost,1) <> "*" then
   if pos(thost,"*?") = 0 then do
     targhost = thost
-    "TBAdd   ftpjobcd save(targport targtls)"
+    "TBAdd   ftpjobcd"
   end
   "TBSort  ftpjobcd Fields(targhost)"
   "TBSave  ftpjobcd Library(ISPPROF)"
@@ -2805,9 +2810,9 @@ Save_Remote_Jobcard:
   rj4 = load.4
   targhost = thost
   if rc > 0 then
-  "TBAdd   ftpjobcd save(targport targtls)"
+  "TBAdd   ftpjobcd"
   else
-  "TBPut   ftpjobcd save(targport targtls)"
+  "TBPut   ftpjobcd"
   "TBSort  ftpjobcd Fields(targhost)"
   "TBSave  ftpjobcd Library(ISPPROF)"
   "TBClose ftpjobcd Library(ISPPROF)"
@@ -2906,7 +2911,7 @@ Get_Hostname:
           if rc = 0 then do
             tsel = "Clone"
             if targhost /= null then
-            "TBAdd thosttbl order save(targport targtls)"
+            "TBAdd thosttbl order"
           end
           "control display restore"
         end
@@ -2915,7 +2920,7 @@ Get_Hostname:
           "Display Panel(FTPBUHST)"
           if rc = 0 then do
             tsel = "Update"
-            "TBMod thosttbl save(targport targtls)"
+            "TBMod thosttbl"
           end
           "control display restore"
         end
@@ -2929,7 +2934,7 @@ Get_Hostname:
           if pw > 0 then do
             mhst = delword(mhst,pw,1)
             tsel = null
-            "TBMod thosttbl save(targport targtls)"
+            "TBMod thosttbl"
             targhost = "?"
           end
           else targhost = '?'
@@ -2948,7 +2953,7 @@ Get_Hostname:
           if zedsmsg = null then do
             mhst = mhst targhost":"targport":"targtls
             tsel = "Select"
-            "TBMod thosttbl save(targport targtls)"
+            "TBMod thosttbl"
           end
           if mult_sels > 0 then
           targhost = "?"
@@ -2988,8 +2993,8 @@ Get_NRC_Uid:
   return
 
 Create_Table:
-  "TBCreate ftpjobcd keys(targhost)",
-    "Names(rj1  rj2  rj3 rj4 targport targtls thdesc)",
+  "TBCreate ftpjobcd keys(targhost targport)",
+    "Names(rj1  rj2  rj3 rj4 targtls thdesc)",
     "Replace  Library(ISPPROF)"
   return
 
@@ -3001,7 +3006,7 @@ Save_Thost_Table:
     "TBSkip thosttbl"
     "TBGet  thosttbl"
     targhost = strip(targhost)
-    "TBAdd ftpjobcd save(targport targtls)"
+    "TBAdd ftpjobcd"
   end
   "TBSave  ftpjobcd Library(ISPPROF)"
   "TBClose ftpjobcd Library(ISPPROF)"
@@ -3018,13 +3023,13 @@ Build_Thost_Table:
   'tbquery ftpjobcd rownum(rows)'
   if rows = 0 then call new_thost_table_entry
   "TBTop ftpjobcd"
-  "TBCreate thosttbl keys(targhost)",
-    "Names(tsel rj1  rj2  rj3 rj4 targport targtls thdesc)"
+  "TBCreate thosttbl keys(targhost targport)",
+    "Names(tsel rj1  rj2  rj3 rj4 targtls thdesc)"
   tsel = null
   "TBQuery ftpjobcd rownum(rows)"
   do rw = 1 to rows
     "TBSkip ftpjobcd"
-    "TBGet  ftpjobcd save(targport targtls)"
+    "TBGet  ftpjobcd"
     targhost = strip(targhost)
     if targhost /= null then
     "TBAdd  thosttbl"
@@ -3041,7 +3046,7 @@ New_Thost_Table_Entry:
   rj2 = lj2
   rj3 = lj3
   rj4 = lj4
-  "TBadd ftpjobcd save(targport targtls)"
+  "TBadd ftpjobcd"
   return
 
   /* -------------------------- *
@@ -3561,35 +3566,21 @@ Get_Dataset_list:
     'vput (mgen) profile'
     call setup_jcl
     call set_ftp
-    gftpc = ftp.0
+    gftpc = ftp.0 -2
     'tbtop' gtab
     do forever
       'tbskip' gtab
       if rc > 0 then leave
       if gact = null then iterate
       rep = null
-      if gdsorg = 'PO' then do
-        call fix_get_dsn
-        if sysdsn("'"newdsn"'") /= 'OK'
-        then call alloc_get_dsn
-        else rep = '(Replace'
-        gftpc = gftpc + 1
-        ftp.gftpc = 'cd' "'"gdsn"'"
-        gftpc = gftpc + 1
-        ftp.gftpc = 'lcd' "'"newdsn"'"
-        gftpc = gftpc + 1
-        ftp.gftpc = 'mget *' rep
-      end
-      else do
-        call fix_get_dsn
-        if sysdsn("'"newdsn"'") /= 'OK'
-        then call alloc_get_dsn
-        gftpc = gftpc + 1
-        ftp.gftpc = 'get' "'"gdsn"' '"newdsn"' (Replace"
-      end
+      call fix_get_dsn
+      gftpc = gftpc + 1
+      ftp.gftpc = 'mvsget' "'"gdsn"' '"newdsn"' (Realloc"
     end
     gftpc = gftpc + 1
     ftp.gftpc = 'quit'
+    gftpc = gftpc + 1
+    ftp.gftpc = '/*'
     ftp.0 = gftpc
     tdsnamex = newhlq
     call do_ftp
@@ -3610,33 +3601,6 @@ Fix_Get_DSN:
   gdsnw = translate(gdsn,' ','.')
   newdsn = wnew subword(gdsnw,wneww+1)
   newdsn = translate(newdsn,'.',' ')
-  return
-
-  /* ------------------------------------------------ *
-  | Allocate the local dataset for the GET operation |
-  * ------------------------------------------------ */
-alloc_get_dsn:
-  if gdsorg = 'PO' then do
-    gpdse = null
-    if grecfm = 'U' then do
-       'addpop'
-       'display panel(ftpbgpds)'
-       frc = rc
-       'rempop'
-       if frc > 0 then gpdse = null
-       end
-    if gpdse /= null
-    then pdse =  "dsorg(po) dir("gpdse")"
-    else pdse =  "dsntype(library,2) maxgens("mgen") dsorg(po) dir(1)"
-  end
-  if gdsorg = 'PS'
-  then pdse = 'dsorg(ps)'
-  Address TSO ,
-    "Alloc ds('"newdsn"') new spa("gused","gused") tr" ,
-    "recfm("strip(left(grecfm,1) substr(grecfm,2,1) substr(grecfm,3,1))")" ,
-    'lrecl('glrecl') blksize('gblksize')' pdse
-  Address TSO ,
-    "Free ds('"newdsn"')"
   return
 
   /* -------------------------------------------- *
@@ -4129,3 +4093,28 @@ PATMATCH: Procedure
   THEN RETURN 1                      /* Yes, that's a match.            */
   ELSE RETURN 0                      /* Else, sorry, not a match.       */
   /*-End of PATMATCH function-------------------------------------------*/
+
+/* -------------------------- *
+ | Rebuild the FTPJOBCD table |
+ * -------------------------- */
+Update_FTPJOBCD_Table: procedure expose null
+say 'updating'
+  'tbtop ftpjobcd'
+  c = 0
+  do forever
+     c = c + 1
+     t.c = targhost targport '|'rj1'|'rj2'|'rj3'|'rj4'|'targtls'|'thdesc
+     'tbskip ftpjobcd'
+     if rc > 0 then leave
+     end
+  'tbend ftpjobcd'
+  'tbdelete ftpjobcd'
+  "TBCreate ftpjobcd keys(targhost targport)",
+    "Names(rj1  rj2  rj3 rj4 targtls thdesc)",
+    "Replace  Library(ISPPROF)"
+  do i = 1 to c
+     parse value t.c with ,
+         targhost targport '|'rj1'|'rj2'|'rj3'|'rj4'|'targtls'|'thdesc
+     'tbadd ftpjobcd'
+     end
+  return
