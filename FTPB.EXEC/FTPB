@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.005"
+  ftpbver = "2.006"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            04/21/2021  - 2.006  - Add mode b/type e for GET   *
   *            04/16/2021  - 2.005  - Add port to ftpjobcd table  *
   *                                   key                         *
   *            04/15/2021  - 2.004  - Use MVSGET for FTPB GET     *
@@ -3566,7 +3567,7 @@ Get_Dataset_list:
     'vput (mgen) profile'
     call setup_jcl
     call set_ftp
-    gftpc = ftp.0 -2
+    gftpc = ftp.0
     'tbtop' gtab
     do forever
       'tbskip' gtab
