@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.006"
+  ftpbver = "2.007"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            04/23/2021  - 2.007  - Remove debug say statement  *
   *            04/21/2021  - 2.006  - Add mode b/type e for GET   *
   *            04/16/2021  - 2.005  - Add port to ftpjobcd table  *
   *                                   key                         *
@@ -4099,7 +4100,6 @@ PATMATCH: Procedure
  | Rebuild the FTPJOBCD table |
  * -------------------------- */
 Update_FTPJOBCD_Table: procedure expose null
-say 'updating'
   'tbtop ftpjobcd'
   c = 0
   do forever
