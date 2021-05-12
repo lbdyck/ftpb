@@ -21,7 +21,7 @@
 +
 )INIT
  &zwinttl = 'FTP NETRC Option'
- &zcont = ftpbhf6
+ &zcont = ftpbhf14
  &zup   = ftpbhf5
  vget (netsec)
 *REXX(* netsec)

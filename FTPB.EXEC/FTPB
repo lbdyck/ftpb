@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.007"
+  ftpbver = "2.008"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            05/12/2021  - 2.008  - Add other for Sync/Get      *
+  *                                 - Add Passive on FTPB panel   *
   *            04/23/2021  - 2.007  - Remove debug say statement  *
   *            04/21/2021  - 2.006  - Add mode b/type e for GET   *
   *            04/16/2021  - 2.005  - Add port to ftpjobcd table  *
@@ -479,7 +481,7 @@ Do_It:
   if pos("/",sdsname) = 0 then
   sdsname = translate(sdsname)
   "Vput (sdsname thost userid bin mvs other other2 usernrc" ,
-    "thport fir tls firewall post ftpgp) Profile"
+    "thport fir tls psv firewall post ftpgp) Profile"
 
   /* ------------------------ *
   * Test for Feedback option *
@@ -601,7 +603,7 @@ Do_It:
       rename = "on"
     end
     else if mvs = "Yes" then
-      if pos(ftpgp,'GP') > 0 then do
+    if pos(ftpgp,'GP') > 0 then do
       tdsnamex = sdsnamex
       to_dsn   = tdsnamex
       tdsnamex = tdsnamex
@@ -778,7 +780,7 @@ Do_It:
   * Set remote dsname          *
   * -------------------------- */
   if length(to_dsn) = 0 then
-    if ftpgp /= 'S' then do
+  if ftpgp /= 'S' then do
     if mvs = "Yes"
     then targ_dsn = from_dsn
     else targ_dsn = to_dsn
@@ -1536,6 +1538,11 @@ Set_FTP:
   end
 
   ftp.0 = nn
+  if translate(psv) = 'YES' then do
+    nn = ftp.0 + 1
+    ftp.nn = 'locsite fwfriendly'
+    ftp.0 = nn
+  end
   if length(other) > 0 then do
     nn = ftp.0 + 1
     ftp.nn = other
@@ -2740,8 +2747,8 @@ Setup_Remote_Jobcard:
     rj4 = ftp.4
   end
   if userid = null then
-     if usernrc /= null
-     then userid = get_nrc_uid()
+  if usernrc /= null
+  then userid = get_nrc_uid()
   parse value rj1 with "//" jobname "JOB" rest
   Uuserid = translate(userid)
   if forcejbn = "Y" then do
@@ -3305,9 +3312,24 @@ Do_Pop4:
 Check_Remote:
   arg test_dsn
   drop ftpx.
-  ftpx.1 = 'dir' test_dsn
-  ftpx.2 = 'quit'
-  ftpx.0 = 2
+  fc = 0
+  if translate(psv) = 'YES' then do
+    fc = fc + 1
+    ftpx.fc = 'locsite fwfriendly'
+  end
+  if strip(other) /= null then do
+    fc = fc + 1
+    ftpx.fc = other
+  end
+  if strip(other2) /= null then do
+    fc = fc + 1
+    ftpx.fc = other
+  end
+  fc = fc + 1
+  ftpx.fc = 'dir' test_dsn
+  fc = fc + 1
+  ftpx.fc = 'quit'
+  ftpx.0 = fc
   m1 = 'Checking the Remote System for'
   m2 = 'Dataset:' test_dsn
   call do_pop2
@@ -3370,7 +3392,7 @@ Do_Sync:
 Do_Get:
   gdsname = strip(sdsname)
   if left(gdsname,1) = "'" then
-     gdsname = strip(gdsname,'B',"'")
+  gdsname = strip(gdsname,'B',"'")
   if right(gdsname,3) = '.**' then
   gdsname = "'"left(gdsname,length(gdsname)-3)"'"
   m1 = 'Getting a list of all members from both'
@@ -3459,16 +3481,33 @@ Check_Remote_Dataset:
 Get_Dataset_list:
   test_gdsname = translate(gdsname,' ','.')
   if words(test_gdsname) > 1 then do
-  check_gdsname = word(test_gdsname,words(test_gdsname))
-  test_gdsname = subword(test_gdsname,1,words(test_gdsname)-1)
+    check_gdsname = word(test_gdsname,words(test_gdsname))
+    test_gdsname = subword(test_gdsname,1,words(test_gdsname)-1)
   end
   else check_gdsname = null
   test_gdsname = translate(test_gdsname,'.',' ')
   check_glen = length(check_gdsname)
 
-  ftpx.1 = 'cd' "'"test_gdsname"'"
-  ftpx.2 = 'dir'
-  ftpx.3 = 'quit'
+  fc = 0
+  if translate(psv) = 'YES' then do
+    fc = fc + 1
+    ftpx.fc = 'locsite fwfriendly'
+  end
+  if strip(other) /= null then do
+    fc = fc + 1
+    ftpx.fc = other
+  end
+  if strip(other2) /= null then do
+    fc = fc + 1
+    ftpx.fc = other
+  end
+  fc = fc + 1
+  ftpx.fc = 'cd' "'"test_gdsname"'"
+  fc = fc + 1
+  ftpx.fc = 'dir'
+  fc = fc + 1
+  ftpx.fc = 'quit'
+  ftpx.0 = fc
 
   call do_ftpx
 
@@ -3498,13 +3537,13 @@ Get_Dataset_list:
   end
 
   if gcount = 0 then do
-     'tbend' gtab
-     zedsmsg = 'No Datasets.'
-     zedlmsg = 'No Datasets were found with the provided HLQ of' gdsname
+    'tbend' gtab
+    zedsmsg = 'No Datasets.'
+    zedlmsg = 'No Datasets were found with the provided HLQ of' gdsname
 
-     'Setmsg msg(isrz001)'
-     return
-     end
+    'Setmsg msg(isrz001)'
+    return
+  end
 
   'tbsort' gtab  'field(gdsn,ch,a)'
   'tbtop'  gtab
@@ -3610,17 +3649,36 @@ Fix_Get_DSN:
   * -------------------------------------------- */
 Get_Member_Lists:
   mult = 1
-  ftpx.1 = 'cd' rpds
-  ftpx.2 = 'lcd' lpds
-  ftpx.3 = 'TSO %ftpbpdir' lpds
+  fc = 0
+  if translate(psv) = 'YES' then do
+    fc = fc + 1
+    ftpx.fc = 'locsite fwfriendly'
+  end
+  if strip(other) /= null then do
+    fc = fc + 1
+    ftpx.fc = other
+  end
+  if strip(other2) /= null then do
+    fc = fc + 1
+    ftpx.fc = other
+  end
+  fc = fc + 1
+  ftpx.fc = 'cd' rpds
+  fc = fc + 1
+  ftpx.fc = 'lcd' lpds
+  fc = fc + 1
+  ftpx.fc = 'TSO %ftpbpdir' lpds
   if new = 'No' then do
-    ftpx.4 = 'dir'
-    ftpx.5 = 'quit'
-    ftpx.0 = 5
+    fc = fc + 1
+    ftpx.fc = 'dir'
+    fc = fc + 1
+    ftpx.fc = 'quit'
+    ftpx.0 = fc
   end
   else do
-    ftpx.4 = 'quit'
-    ftpx.0 = 4
+    fc = fc + 1
+    ftpx.fc = 'quit'
+    ftpx.0 = fc
   end
 
   call do_ftpx
@@ -3880,12 +3938,30 @@ Proc_Member_List:
         Address TSO ,
           'alloc  ds('tempds') new spa(15,15) tr like('lpds')' ,
           'dsntype(basic) dsorg(ps) f('tempdd')'
-        ftpx.1 = 'mode b'
-        ftpx.2 = 'type e'
-        ftpx.3 = 'cd' rpds
-        ftpx.4 = 'get' fmem tempds '(Replace'
-        ftpx.5 = 'quit'
-        ftpx.0 = 5
+        fc = 0
+        if translate(psv) = 'YES' then do
+          fc = fc + 1
+          ftpx.fc = 'locsite fwfriendly'
+        end
+        if strip(other) /= null then do
+          fc = fc + 1
+          ftpx.fc = other
+        end
+        if strip(other2) /= null then do
+          fc = fc + 1
+          ftpx.fc = other
+        end
+        fc = fc + 1
+        ftpx.fc = 'mode b'
+        fc = fc + 1
+        ftpx.fc = 'type e'
+        fc = fc + 1
+        ftpx.fc = 'cd' rpds
+        fc = fc + 1
+        ftpx.fc = 'get' fmem tempds '(Replace'
+        fc = fc + 1
+        ftpx.fc = 'quit'
+        ftpx.0 = fc
 
         call do_ftpx
 
@@ -4103,19 +4179,19 @@ Update_FTPJOBCD_Table: procedure expose null
   'tbtop ftpjobcd'
   c = 0
   do forever
-     c = c + 1
-     t.c = targhost targport '|'rj1'|'rj2'|'rj3'|'rj4'|'targtls'|'thdesc
-     'tbskip ftpjobcd'
-     if rc > 0 then leave
-     end
+    c = c + 1
+    t.c = targhost targport '|'rj1'|'rj2'|'rj3'|'rj4'|'targtls'|'thdesc
+    'tbskip ftpjobcd'
+    if rc > 0 then leave
+  end
   'tbend ftpjobcd'
   'tbdelete ftpjobcd'
   "TBCreate ftpjobcd keys(targhost targport)",
     "Names(rj1  rj2  rj3 rj4 targtls thdesc)",
     "Replace  Library(ISPPROF)"
   do i = 1 to c
-     parse value t.c with ,
-         targhost targport '|'rj1'|'rj2'|'rj3'|'rj4'|'targtls'|'thdesc
-     'tbadd ftpjobcd'
-     end
+    parse value t.c with ,
+      targhost targport '|'rj1'|'rj2'|'rj3'|'rj4'|'targtls'|'thdesc
+    'tbadd ftpjobcd'
+  end
   return

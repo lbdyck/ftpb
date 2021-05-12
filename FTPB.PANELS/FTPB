@@ -18,7 +18,7 @@
 +
 +Remote Information:            Direction%===>_z+ %G+Get,%P+Put+or%S+Sync
 + Hostname or ? %===>@thost                                                   +
-+ FTP Port      %===>@thport +  Use TLS%===>@tls+
++ FTP Port      %===>@thport +  Use TLS%===>@tls+  Use Passive%===>@psv+
 +
 +User Information:
 +   Userid         %===>@userid                                                +
@@ -46,6 +46,7 @@
  &bin = trans(trunc(&bin,1) &z,No  Y,Yes N,No *,*)
  &fir = trans(trunc(&fir,1) &z,No  Y,Yes N,No *,*)
  &tls = trans(trunc(&tls,1) &z,No  Y,Yes N,No *,*)
+ &psv = trans(trunc(&psv,1) &z,No  Y,Yes N,No *,*)
  &ftpgp = trans(&ftpgp &z,P G,G P,P S,S)
 )PROC
 &mvs = trans(trunc(&mvs,1) &z,Yes Y,Yes N,No y,Yes n,No *,*)
@@ -53,6 +54,8 @@
 &fir = trans(trunc(&fir,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
 &tls = trans(trunc(&tls,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
 ver (&tls,nb,list,Yes,No)
+&psv = trans(trunc(&psv,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
+ver (&psv,nb,list,Yes,No)
 &egg = trans(&sdsname egg,EGG *,*)
 if (&egg NE EGG)
    if (&zcmd = &z)
@@ -122,6 +125,7 @@ if (&egg NE EGG)
  Field(bin)      panel(ftpbhf7)
  Field(fir)      panel(ftpbhf8)
  Field(tls)      panel(ftpbhf11)
+ Field(psv)      panel(ftpbhf14)
  Field(firewall) panel(ftpbhf8)
  Field(other)    panel(ftpbhf9)
  Field(other2)   panel(ftpbhf9)
