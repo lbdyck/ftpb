@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.008"
+  ftpbver = "2.010"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            06/23/2021  - 2.010  - Fix get dsname ending .     *
+  *            06/14/2021  - 2.009  - Add check for remote errors *
   *            05/12/2021  - 2.008  - Add other for Sync/Get      *
   *                                 - Add Passive on FTPB panel   *
   *            04/23/2021  - 2.007  - Remove debug say statement  *
@@ -893,6 +895,7 @@ Do_It:
         end
         return
       end
+      if mem_err = 3 then return
     end
     When pos(slash,from_dsn) > 0 then do
       if left(from_dsn,1) = "'" then
@@ -1283,6 +1286,22 @@ Do_Members:
   end
 
   if mvs = 'Yes' then x = check_remote_dataset(targ_dsn)
+  if x = 2 then do
+     zedsmsg = 'Error.'
+     zedlmsg = 'You have not provided a valid userid/password to' ,
+               'connect to the remote system.'
+    'setmsg msg(isrz001)'
+     mem_err = 3
+     return
+     end
+  if x = 3 then do
+     zedsmsg = 'Error.'
+     zedlmsg = 'You have not provided a valid remote hostname or' ,
+               'I.P. address.'
+    'setmsg msg(isrz001)'
+     mem_err = 3
+     return
+     end
 
   Select
     when unl = "No" then do
@@ -3337,6 +3356,10 @@ Check_Remote:
   Address ISPExec
   do i = 1 to out.0
     if pos('No data sets found.',out.i) > 0 then return 1
+    if pos('530 You must first login with USER and PASS.',out.i) > 0
+       then return 2
+    if pos('Connection to server interrupted or timed out.',out.i) > 0
+       then return 3
   end
   return 0
 
@@ -3373,7 +3396,21 @@ Do_Sync:
   rpds = tdsname
   if rpds = null then rpds = lpds
   tdsnamex = rpds
-  call check_remote_dataset(rpds)
+  x = check_remote_dataset(rpds)
+  if x = 2 then do
+     zedsmsg = 'Error.'
+     zedlmsg = 'You have not provided a valid userid/password to' ,
+               'connect to the remote system.'
+    'setmsg msg(isrz001)'
+     return
+     end
+  if x = 3 then do
+     zedsmsg = 'Error.'
+     zedlmsg = 'You have not provided a valid remote hostname or' ,
+               'I.P. address.'
+    'setmsg msg(isrz001)'
+     return
+     end
   if new = 'Yes' then
   call ftp_site_info
   m1 = 'Getting a list of all members from both'
@@ -3468,6 +3505,8 @@ Check_Remote_Dataset:
   x = check_remote(test_dsn)
   if x = 1 then new = 'Yes'
   else new = 'No'
+  if x = 2 then return 2
+  if x = 3 then return 3
   alloc = x
   if new = 'Yes' then
   "Display Panel(ftpbppds)"
@@ -3641,7 +3680,7 @@ Fix_Get_DSN:
   wneww = words(wnew)
   gdsnw = translate(gdsn,' ','.')
   newdsn = wnew subword(gdsnw,wneww+1)
-  newdsn = translate(newdsn,'.',' ')
+  newdsn = translate(strip(newdsn),'.',' ')
   return
 
   /* -------------------------------------------- *
