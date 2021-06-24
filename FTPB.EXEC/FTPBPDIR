@@ -7,10 +7,11 @@
   | Syntax:    PDSDIR dsname                                   |
   |                                                            |
   | Author:    Janko Kalinic                                   |
-  |            The ISPF Cabal - Vive la revolution             |
+  |            The ISPF Cabal - Vive la révolution             |
   |            the.pds.command@gmail.com                       |
   |                                                            |
   | History:  (most recent on top)                             |
+  |            06/24/21 - Correct p2d (remove sign check) LBD  |
   |            01/21/21 - Use in FTPSYNC                       |
   |            10/09/96 - Creation                             |
   |                                                            |
@@ -86,11 +87,13 @@
 p2d: procedure
   parse arg number_p
   erg = c2x(number_p)
-  sign = right(erg,1)
   number = left(erg,length(erg)-1)
+  /* Comment Start
+  sign = right(erg,1)
   if sign = 'D' then
   return '-'||number
   else
+     Comment End */
   return number
 
 d2p: procedure
