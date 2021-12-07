@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.010"
+  ftpbver = "2.012"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,12 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            12/07/2021  - 2.012  - Add Sync option R to remove *
+  *                                   (aka delete) the local PDS  *
+  *                                   member.                     *
+  *            10/23/2021  - 2.011  - Check if remote PDS member  *
+  *                                   compare failed due to a     *
+  *                                   possible ENQ                *
   *            06/23/2021  - 2.010  - Fix get dsname ending .     *
   *            06/14/2021  - 2.009  - Add check for remote errors *
   *            05/12/2021  - 2.008  - Add other for Sync/Get      *
@@ -4004,13 +4010,23 @@ Proc_Member_List:
 
         call do_ftpx
 
-        'control display save'
-        if left(lpds,1) = "'"
-        then cplds = "'"strip(rpds,'B',"'")"("fmem")'"
-        else cplds = lpds"("fmem")"
-        'vput (tempds rpds fmem) shared'
-        'Edit dataset('cplds') macro(ftpbredt)'
-        'control display restore'
+        x = listdsi(tempds)
+        if sysused > 0 then do
+          'control display save'
+          if left(lpds,1) = "'"
+          then cplds = "'"strip(rpds,'B',"'")"("fmem")'"
+          else cplds = lpds"("fmem")"
+          'vput (tempds rpds fmem) shared'
+          'Edit dataset('cplds') macro(ftpbredt)'
+          'control display restore'
+        end
+        else do
+           zedsmsg = 'Error.'
+           zedlmsg = 'The remote PDS member was not retrieved. This could' ,
+            'be caused by the PDS/PDS-Member having an exclusive ENQ' ,
+            'at the remote site.'
+           'setmsg msg(isrz001)'
+           end
         call outtrap 'x.'
         address tso 'free f('tempdd') delete'
         call outtrap 'off'
@@ -4019,6 +4035,15 @@ Proc_Member_List:
         if fstate = null then
         transfer_count = transfer_count + 1
         fstate = 'DELETE'
+        'tbput' ftp_table
+        if wordpos(fmem,transfer.0) = 0 then
+        transfer.0 = transfer.0 fmem
+        transfer.fmem = fstate
+      end
+      when fsel = 'R' then do
+        if fstate = null then
+        transfer_count = transfer_count + 1
+        fstate = 'REMOVE'
         'tbput' ftp_table
         if wordpos(fmem,transfer.0) = 0 then
         transfer.0 = transfer.0 fmem
@@ -4046,7 +4071,9 @@ Proc_Member_List:
         fstate = null
         'tbput' ftp_table
         transfer.fmem = fstate
+        /* Comment Start
         transfer_count = transfer_count - 1
+           Comment End */
         p = wordpos(fmem,transfer.0)
         transfer.0 = delword(transfer.0,p,1)
         if clear_flag = 1 then
@@ -4107,6 +4134,15 @@ Proc_Member_List:
     ftpc = ftpc + 1
     fstate = transfer.fmem
     if fstate = 'GET' then fmem = fmem '( Replace'
+    if fstate = 'REMOVE' then do
+       if left(lpds,1) = "'" then do
+          parse value lpds with "'"dpds"'"
+          dpds = "'"dpds"("fmem")'"
+          end
+       else dpds = lpds'('fmem')'
+       fstate = 'TSO DELETE' dpds
+       fmem = null
+       end
     ftpx.ftpc = fstate fmem
     fstate = null
   end
