@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.012"
+  ftpbver = "2.013"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/18/2022  - 2.013  - On a Sync check the Compare *
+  *                                   using Edit rc and setmsg    *
   *            12/07/2021  - 2.012  - Add Sync option R to remove *
   *                                   (aka delete) the local PDS  *
   *                                   member.                     *
@@ -4018,6 +4020,9 @@ Proc_Member_List:
           else cplds = lpds"("fmem")"
           'vput (tempds rpds fmem) shared'
           'Edit dataset('cplds') macro(ftpbredt)'
+          if rc > 0 then do
+             'setmsg msg(isrz003)'
+             end
           'control display restore'
         end
         else do
