@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.013"
+  ftpbver = "2.014"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/21/2022  - 2.014  - Check FTP error on GET      *
   *            01/18/2022  - 2.013  - On a Sync check the Compare *
   *                                   using Edit rc and setmsg    *
   *            12/07/2021  - 2.012  - Add Sync option R to remove *
@@ -3567,6 +3568,20 @@ Get_Dataset_list:
     'nowrite'
   do gdx = 1 to out.0
     if subword(out.gdx,2,2) = 'Volume Unit' then leave
+    if pos('530 You must first login with USER and PASS.',out.gdx) > 0
+       then do
+       zedsmsg = 'Error.'
+       zedlmsg = out.gdx
+      'Setmsg msg(isrz001)'
+      return
+      end
+    if pos('Connection to server interrupted or timed out.',out.gdx) > 0
+       then do
+       zedsmsg = 'Error.'
+       zedlmsg = out.gdx
+      'Setmsg msg(isrz001)'
+      return
+      end
   end
   gcount = 0
   gact = null
@@ -3587,7 +3602,6 @@ Get_Dataset_list:
     'tbend' gtab
     zedsmsg = 'No Datasets.'
     zedlmsg = 'No Datasets were found with the provided HLQ of' gdsname
-
     'Setmsg msg(isrz001)'
     return
   end
