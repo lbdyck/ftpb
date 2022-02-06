@@ -1,6 +1,16 @@
 This member (new with the 1.195 level) documents the changes from
 prior levels.
 
+02/06/2022  - 2.016  - Correct unload space alloc
+                     - Correct IF test
+                     - Correct BLKSIZE if not sdb
+                     - Add DSORG=PO on Reload DD
+                     - Correct RENAMEU if masked
+
+02/04/2022  - 2.015  - Correct unload space
+                     - // IF/ENDIF in Unload (Ray Mullins)
+                     - Better align unload jcl
+
 01/21/2022  - 2.014  - Add FTP error checking on GET
 
 01/18/2022  - 2.013  - During Sync using C (Compare) if Edit fails then

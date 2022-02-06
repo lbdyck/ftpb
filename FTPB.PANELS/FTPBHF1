@@ -19,7 +19,7 @@
 ~  'hlq.TEST.CLIST(*)'       + send all members of PDS
 ~  'hlq.TEST.CLIST(AB*)      + prompt members AB* only
 ~  userid.TEST.**            + send all data sets that start
-                             +    with userid.TEST
+                             +    with userid.TEST (using ADRDSSU)
 ~  /u/directory/file         + file in uss (use * for mask)
 +
 +Note: This field can be scrolled left/right for longer names

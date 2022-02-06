@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.014"
+  ftpbver = "2.016"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,14 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            02/06/2022  - 2.016  - Correct unload space alloc  *
+  *                                 - Correct IF test             *
+  *                                 - Correct BLKSIZE if not sdb  *
+  *                                 - Add DSORG=PO on Reload DD   *
+  *                                 - Correct RENAMEU if masked   *
+  *            02/04/2022  - 2.015  - Correct unload space        *
+  *                                 - // IF/ENDIF in Unload (mrm) *
+  *                                 - Better align unload jcl     *
   *            01/21/2022  - 2.014  - Check FTP error on GET      *
   *            01/18/2022  - 2.013  - On a Sync check the Compare *
   *                                   using Edit rc and setmsg    *
@@ -811,6 +819,11 @@ Do_It:
     otherwise nop
   end
 
+  if sysalloc = null then do
+     sysalloc = 1
+     sysseconds = 1
+     end
+  parse value sysalloc*1.5 with sysalloc'.'.
   balloc = "("sysalloc","sysseconds")"
   palloc = "("sysalloc","sysseconds")"
   if tdpdse = 0
@@ -1059,7 +1072,7 @@ Do_It:
   ftp.nn = "/*"
   if unl = "Yes" then do
     nn = nn + 1
-    ftp.nn = "//DELSTEP  EXEC PGM=IEFBR14"
+    ftp.nn = "//DELSTEP   EXEC PGM=IEFBR14"
     nn = nn + 1
     ftp.nn = "//DELLOAD   DD  DISP=(OLD,DELETE),"
     nn = nn + 1
@@ -1079,8 +1092,14 @@ Do_It:
   * Now if unl is 'Yes'  go build the jcl to print the job *
   * that was submitted and executed at the remote site.    *
   * ------------------------------------------------------ */
-  if unl = "Yes" then
-  call set_ftpget_jcl
+  if unl = "Yes" then do
+    call set_ftpget_jcl
+    if ftpif = 1 then do
+       nn = ftp.0 + 1
+       ftp.nn = "//    ENDIF"
+       end
+    ftp.0 = nn
+  end /* if unload */
 
   /* ---------------------------------------------------------- *
   * Display for Edit, Browse, Submit or eXecute the generated  *
@@ -1472,6 +1491,9 @@ Build_List:
 
 Set_FTP:
   nn = ftp.0 + 1
+  ftp.nn = "//   IF  ^ABEND && UNLOAD.RC <= 4 THEN"
+  ftpif = 1
+  nn = nn + 1
   if mhst /= null then
   parse value strip(mhst) with thost":"thport":"tls .
   if tls = 'Yes'
@@ -1644,9 +1666,9 @@ Set_FTPGet_JCL:
   Address ISPExec
   execlib = return_dsn
   nn = ftp.0 + 1
-  ftp.nn = "//PRINT    EXEC PGM=IKJEFT1B,"
+  ftp.nn = "//PRINT     EXEC PGM=IKJEFT1B,"
   nn = nn + 1
-  ftp.nn = "//         PARM='%FTPBJOB2 "ftprpt_dsn"'"
+  ftp.nn = "//    PARM='%FTPBJOB2 "ftprpt_dsn"'"
   nn = nn + 1
   ftp.nn = "//SYSEXEC   DD  DISP=SHR,DSN="execlib
   nn = nn + 1
@@ -1657,7 +1679,6 @@ Set_FTPGet_JCL:
   ftp.nn = "//SYSTSIN   DD  DUMMY"
   nn = nn + 1
   ftp.nn = "/*"
-  nn = nn + 1
   ftp.0 = nn
   return
 
@@ -1690,7 +1711,7 @@ Build_IEBCOPY:
     nn = nn + 1
     ftp.nn = "//          DCB=(RECFM="sysrecfm",LRECL="syslrecl","
     nn = nn + 1
-    ftp.nn = "//          BLKSIZE=27998),"
+    ftp.nn = "//          BLKSIZE="blk"),"
     nn = nn + 1
     ftp.nn = "//          SPACE=("space","palloc",RLSE)"
   end
@@ -1699,10 +1720,10 @@ Build_IEBCOPY:
   nn = nn + 1
   ftp.nn = "//          DSN="unload_dsn","
   nn = nn + 1
-  if pos(space,"TRKCYL") = 0 then spx = blk
-  else spx = space
-  if spx = 0 then spx = 32760
-  ftp.nn = "//     SPACE=("spx","balloc",RLSE)"
+  if pos(word(space,1),"TRKCYL") = 0 then spx = blk
+  else spx = word(space,1)
+  if spx = 0 then spx = 27998
+  ftp.nn = "//          SPACE=("spx","balloc",RLSE)"
   if ut3 = "Yes" then do
     nn = nn + 1
     ftp.nn = "//SYSUT3    DD  UNIT=SYSDA,SPACE=(CYL,(50,50))"
@@ -1716,9 +1737,8 @@ Build_IEBCOPY:
   ftp.0 = nn
 
   nn = load.0 + 1
-  if new = "Yes"
-  then do
-    load.nn = "//DELOAD   EXEC PGM=IEFBR14"
+  if new = "Yes" then do
+    load.nn = "//DELOAD    EXEC PGM=IEFBR14"
     nn = nn + 1
     if left(targ_dsn,1) <> "'" then do
       if sysvar('syspref') = null then
@@ -1735,7 +1755,7 @@ Build_IEBCOPY:
     load.nn = "//          UNIT="dasd",SPACE=(TRK,(0))"
     nn = nn + 1
   end
-  load.nn = "//LOAD     EXEC PGM=IEBCOPY"
+  load.nn = "//LOAD      EXEC PGM=IEBCOPY"
   nn = nn + 1
   load.nn = "//SYSPRINT  DD  SYSOUT=*"
   nn = nn + 1
@@ -1747,16 +1767,16 @@ Build_IEBCOPY:
     nn = nn + 1
     load.nn = "//TEMP      DD  DISP=(,DELETE),UNIT="dasd","
     nn = nn + 1
-    load.nn = "//          SPACE=("space","palloc",RLSE)"
+    load.nn = "//          SPACE=("word(space,1)","palloc",RLSE)"
   end
   nn = nn + 1
   if left(targ_dsn,1) = "'" then
   load.nn = "//OUTPUT    DD  DSN="strip(targ_dsn,,"'")","
   else do
     if length(sysvar('syspref')) = 0 then
-    load.nn = "//OUTPUT     DD  DSN="targ_dsn","
+    load.nn = "//OUTPUT    DD  DSN="targ_dsn","
     else
-    load.nn = "//OUTPUT     DD  DSN="whlq"."targ_dsn","
+    load.nn = "//OUTPUT    DD  DSN="whlq"."targ_dsn","
   end
   load.nn = translate(load.nn)
   nn = nn + 1
@@ -1772,15 +1792,15 @@ Build_IEBCOPY:
     load.nn = "//          UNIT="tun""tvl","
     if tdpdse = 1 then do
       nn = nn + 1
-      load.nn = "//           DSNTYPE=LIBRARY,"
+      load.nn = "//          DSNTYPE=LIBRARY,DSORG=PO,"
     end
     nn = nn + 1
     if blk = null then blk = 0
     load.nn = "//          DCB=(RECFM="sysrecfm,
       ||  ",LRECL="syslrecl",BLKSIZE="blk"),"
     nn = nn + 1
-    if pos(space,"TRKCYL") = 0 then spx = blk
-    else spx = space
+    if pos(word(space,1),"TRKCYL") = 0 then spx = blk
+    else spx = word(space,1)
     if spx = 0 then spx = 32760
     load.nn = "//          SPACE=("spx","palloc""rlse")"
   end
@@ -2042,8 +2062,17 @@ build_dump:
     if multiple = "on" then do
       load.nn = "          RENAMEU("sdsname", - "
       nn      = nn + 1
-      if right(tdsname,2) = ".*" then
-      tdsname = tdsname"*"
+      if left(tdsname,1) = "'" then
+         tdsname = strip(tdsname,,"'")
+      if right(sdsname,2) = '.*'
+         then sdsname = sdsname'*'
+      if right(sdsname,1) = '*' then
+      Select
+        When right(tdsname,2) = '.*' then
+             tdsname = tdsname"*"
+        When right(tdsname,3) = '.**' then nop
+        Otherwise tdsname = tdsname'.**'
+        end
       rt_dsn = translate(strip(tdsname,,"'"))
       load.nn = "                  "rt_dsn") -"
     end
@@ -3193,6 +3222,7 @@ FTP_Site_Info:
     when sp = "CYL" then space = "CYL"
     otherwise space = sp
   end
+  parse value sysalloc*1.5 with sysalloc'.'.
   balloc = "("sysalloc","sysseconds")"
   palloc = "("sysalloc","sysseconds")"
   if rel = "Yes" then rlse = ",RLSE"

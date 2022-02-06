@@ -74,7 +74,7 @@ if (&egg NE EGG)
           ver (&firewall,nb)
       ver (&bin,nb,list,Yes,No)
       ver (&mvs,nb,list,Yes,No)
-       ver (&ftpgp,nb,list,P,G,S)
+      ver (&ftpgp,nb,list,P,G,S)
  &resp = .resp
 *rexx(* zedsmsg zedlmsg csr resp)
   if resp = 'END' then exit
