@@ -35,9 +35,9 @@
   &sp = trans(trunc(&sp,1) B,Blocks b,Blocks T,TRK t,TRK C,CYL c,CYL)
   &rel = trans(trunc(&rel,1) Y,Yes N,No &z,Yes)
 )Proc
-  &sp = trans(trunc(&sp,1) B,Blocks b,Blocks T,TR t,TR C,CYL c,CYL *,*)
+  &sp = trans(trunc(&sp,1) B,Blocks b,Blocks T,TRK t,TRK C,CYL c,CYL *,*)
   &rel = trans(trunc(&rel,1) Y,Yes N,No y,Yes n,No *,*)
-  Ver (&sp,nb,list,Blocks,TR,CYL)
+  Ver (&sp,nb,list,Blocks,TRK,CYL)
   Ver (&rel,nb,list,Yes,No)
   ver (&tdclas,name)
   ver (&tmclas,name)

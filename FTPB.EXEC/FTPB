@@ -59,7 +59,7 @@
   *                                                               *
   * History:                                                      *
   *            02/06/2022  - 2.016  - Correct unload space alloc  *
-  *                                 - Correct IF test             *
+  *                9                - Correct IF test             *
   *                                 - Correct BLKSIZE if not sdb  *
   *                                 - Add DSORG=PO on Reload DD   *
   *                                 - Correct RENAMEU if masked   *
@@ -1672,7 +1672,7 @@ Set_FTPGet_JCL:
   nn = nn + 1
   ftp.nn = "//SYSEXEC   DD  DISP=SHR,DSN="execlib
   nn = nn + 1
-  ftp.nn = "//REPORT    DD  SYSOUT=*,DCB=(RECFM=VB,LRECL=255)"
+  ftp.nn = "//REPORT    DD  SYSOUT=*,DCB=(RECFM=VBA,LRECL=255)"
   nn = nn + 1
   ftp.nn = "//SYSTSPRT  DD  SYSOUT=*,DCB=(RECFM=VB,LRECL=255)"
   nn = nn + 1
@@ -1793,6 +1793,8 @@ Build_IEBCOPY:
     if tdpdse = 1 then do
       nn = nn + 1
       load.nn = "//          DSNTYPE=LIBRARY,DSORG=PO,"
+      parse value palloc with '('p','s')'
+      palloc = '('p','s',1)'
     end
     nn = nn + 1
     if blk = null then blk = 0
