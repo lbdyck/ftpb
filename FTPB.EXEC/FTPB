@@ -58,8 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
-  *            02/06/2022  - 2.016  - Correct unload space alloc  *
-  *                9                - Correct IF test             *
+  *            02/18/2022  - 2.016  - Correct unload space alloc  *
+  *                                 - Correct IF test             *
   *                                 - Correct BLKSIZE if not sdb  *
   *                                 - Add DSORG=PO on Reload DD   *
   *                                 - Correct RENAMEU if masked   *
@@ -1491,9 +1491,11 @@ Build_List:
 
 Set_FTP:
   nn = ftp.0 + 1
-  ftp.nn = "//   IF  ^ABEND && UNLOAD.RC <= 4 THEN"
-  ftpif = 1
-  nn = nn + 1
+  if unl = 'Yes' then do
+     ftp.nn = "//   IF  ^ABEND && UNLOAD.RC <= 4 THEN"
+     ftpif = 1
+     nn = nn + 1
+     end
   if mhst /= null then
   parse value strip(mhst) with thost":"thport":"tls .
   if tls = 'Yes'
