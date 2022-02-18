@@ -1071,6 +1071,11 @@ Do_It:
   nn = nn + 1
   ftp.nn = "/*"
   if unl = "Yes" then do
+    call set_ftpget_jcl
+    if ftpif = 1 then do
+       nn = nn + 1
+       ftp.nn = "//    ENDIF"
+       end
     nn = nn + 1
     ftp.nn = "//DELSTEP   EXEC PGM=IEFBR14"
     nn = nn + 1
@@ -1092,7 +1097,7 @@ Do_It:
   * Now if unl is 'Yes'  go build the jcl to print the job *
   * that was submitted and executed at the remote site.    *
   * ------------------------------------------------------ */
-  if unl = "Yes" then do
+  if unl = "xxx" then do
     call set_ftpget_jcl
     if ftpif = 1 then do
        nn = ftp.0 + 1
