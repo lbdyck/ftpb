@@ -4,7 +4,7 @@
 /* _ type( input) intens(high) caps(on ) just(left )               */
    ! type( input) intens(high) caps(on ) just(left ) hilite(uscore)
    ^ type( input) intens(low ) caps(off) just(asis )
-   @ type( input) intens(low ) caps(off) just(right)
+   @ type(output) intens(low ) caps(off) just(right)
    ~ type(text) intens(high) color(blue) hilite(reverse)
    ` type(text) intens(high) color(red)
 )Body  Expand(//)
