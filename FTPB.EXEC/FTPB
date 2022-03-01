@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.016"
+  ftpbver = "2.017"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            03/01/2022  - 2.017  - Fix LOAD of PDS missing     *
+  *                                   dir blocks                  *
   *            02/18/2022  - 2.016  - Correct unload space alloc  *
   *                                 - Correct IF test             *
   *                                 - Correct BLKSIZE if not sdb  *
@@ -1811,6 +1813,11 @@ Build_IEBCOPY:
     if pos(word(space,1),"TRKCYL") = 0 then spx = blk
     else spx = word(space,1)
     if spx = 0 then spx = 32760
+    if pos('direct=',space) > 0
+       then do
+            parse value sp with .'direct='dir
+            palloc = "("sysalloc","sysseconds","dir")"
+            end
     load.nn = "//          SPACE=("spx","palloc""rlse")"
   end
   if ut3 = "Yes" then do
