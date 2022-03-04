@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.017"
+  ftpbver = "2.018"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            03/03/2022  - 2.018  - Correct sync compare dsn    *
   *            03/01/2022  - 2.017  - Fix LOAD of PDS missing     *
   *                                   dir blocks                  *
   *            02/18/2022  - 2.016  - Correct unload space alloc  *
@@ -4076,7 +4077,7 @@ Proc_Member_List:
         if sysused > 0 then do
           'control display save'
           if left(lpds,1) = "'"
-          then cplds = "'"strip(rpds,'B',"'")"("fmem")'"
+          then cplds = "'"strip(lpds,'B',"'")"("fmem")'"
           else cplds = lpds"("fmem")"
           'vput (tempds rpds fmem) shared'
           'Edit dataset('cplds') macro(ftpbredt)'
