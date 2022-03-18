@@ -1,0 +1,17 @@
+)Attr
+ _ type(input) hilite(uscore) caps(on) intens(low)
+)Body Window(54,4)
++Transfer the PDS members using IEBCOPY Unload (Batch)
++or using FTP (Foreground):
++
++Unload for Transfer: _z+%Y+or%N+
+)Init
+ .zvars = '(ftpbunld)'
+ .cursor = ftpbunld
+ .help = ftpbhunl
+ if (&ftpbunld EQ &z)
+     &ftpbunld = 'N'
+ &zwinttl = 'FTP Unload Option'
+)Proc
+ ver (&ftpbunld,nb,list,Y,N)
+)End

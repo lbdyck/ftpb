@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.018"
+  ftpbver = "2.019"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            03/17/2022  - 2.019  - Option to unload a PDS FTP  *
   *            03/03/2022  - 2.018  - Correct sync compare dsn    *
   *            03/01/2022  - 2.017  - Fix LOAD of PDS missing     *
   *                                   dir blocks                  *
@@ -1411,9 +1412,19 @@ Do_Members:
   Select
     When members = "*" then
     if unl = "No" then do
-      nn     = ftp.0 + 1
-      ftp.nn = "mput *"
-      ftp.0  =  nn
+       'AddPop Row(5) Column(10)'
+       'display panel(ftpbunld)'
+       'rempop'
+       if ftpbunld = 'Y' then do
+          unl = 'Yes'
+          ftp.0 = ftpstep - 1
+          call build_iebcopy
+       end
+       else do
+            nn     = ftp.0 + 1
+            ftp.nn = "mput *"
+            ftp.0  =  nn
+            end
     end
     When pos("*",members) > 0 then do
       call do_pds
@@ -1448,6 +1459,18 @@ Do_Members:
     end
     When length(members) = 0 then do
       call do_pds
+      if unl = 'No' then
+         if words(members) > pds_unld | strip(members) = null
+         then do
+            'AddPop Row(5) Column(10)'
+            'display panel(ftpbunld)'
+            'rempop'
+            if ftpbunld = 'Y' then do
+               unl = 'Yes'
+               ftp.0 = ftpstep - 1
+               call build_iebcopy
+            end
+         end
       if words(members) = 0 then
       if nomemopt = 1 then do
         mem_err = 2
@@ -1514,11 +1537,13 @@ Set_FTP:
     ftpparm = strip(tlso''firewall) "(EXIT"
     ftp.nn = ,
       "//FTPSTEP  EXEC PGM=FTP,PARM='"ftpparm"'"
+    ftpstep = nn
   end
   else do
     ftpparm = strip(tlso thost thport) "(EXIT"
     ftp.nn = ,
       "//FTPSTEP  EXEC PGM=FTP,PARM='"ftpparm"'"
+    ftpstep = nn
   end
   nn = nn + 1
   ftp.nn = "//SYSPRINT  DD  SYSOUT=*"
@@ -1765,6 +1790,7 @@ Build_IEBCOPY:
     load.nn = "//          UNIT="dasd",SPACE=(TRK,(0))"
     nn = nn + 1
   end
+
   load.nn = "//LOAD      EXEC PGM=IEBCOPY"
   nn = nn + 1
   load.nn = "//SYSPRINT  DD  SYSOUT=*"
@@ -1780,6 +1806,13 @@ Build_IEBCOPY:
     load.nn = "//          SPACE=("word(space,1)","palloc",RLSE)"
   end
   nn = nn + 1
+  if tdsname /= null
+     then targ_dsn = tdsname
+     else targ_dsn = sdsname
+  if pos('(*)',targ_dsn) > 0 then do
+     parse value targ_dsn with ld'(*)'rd
+     targ_dsn = ld''rd
+     end
   if left(targ_dsn,1) = "'" then
   load.nn = "//OUTPUT    DD  DSN="strip(targ_dsn,,"'")","
   else do
