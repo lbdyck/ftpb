@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.019"
+  ftpbver = "2.020"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,10 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            03/21/2022  - 2.020  - Allow multiple Compares on  *
+  *                                   Sync                        *
+  *                                 - Free FTP JCL DD after Sync  *
+  *                                   if noaction                 *
   *            03/17/2022  - 2.019  - Option to unload a PDS FTP  *
   *            03/03/2022  - 2.018  - Correct sync compare dsn    *
   *            03/01/2022  - 2.017  - Fix LOAD of PDS missing     *
@@ -4078,7 +4082,7 @@ Proc_Member_List:
         tempdd = 'FT'time('s')
         Address TSO ,
           'alloc  ds('tempds') new spa(15,15) tr like('lpds')' ,
-          'dsntype(basic) dsorg(ps) f('tempdd')'
+          'dsntype(basic) dsorg(ps) f('tempdd') reuse'
         fc = 0
         if translate(psv) = 'YES' then do
           fc = fc + 1
@@ -4186,6 +4190,9 @@ Proc_Member_List:
     zedsmsg = null
     zedlmsg = 'No members eligible for FTP.'
     'setmsg msg(isrz001)'
+    call outtrap 'x.'
+    Address TSO 'free f('ddn')'
+    call outtrap 'off'
     return
   end
   drop ftpx.
