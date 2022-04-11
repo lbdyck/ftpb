@@ -27,11 +27,11 @@
 +or NETRC DSname   %===>{usernrc                                       +
 +
 +Optional Information:
-+  z/OS Remote%===>@mvs +Is the Remote system running z/OS?%Yes No
++  z/OS Remote%===>@mvs+%Yes+or%No+Is the Remote system running z/OS?
++  Delta Only %===>@syd+%Yes+or%No+to limit Sync display to Delta Only?
 +   Binary    %===>@bin+%Yes+or%No+(use%No+for z/OS to z/OS)
 +   Firewall  %===>@fir+ Address if Yes ===>@firewall                          +
 +   Initial   %===>$other                                                      +
-+      cmds   %===>$other2                                                     +
 +  Post cmd   %===>$post                                                       +
 )INIT
  .zvars = '(ftpgp)'
@@ -46,7 +46,8 @@
  &bin = trans(trunc(&bin,1) &z,No  Y,Yes N,No *,*)
  &fir = trans(trunc(&fir,1) &z,No  Y,Yes N,No *,*)
  &tls = trans(trunc(&tls,1) &z,No  Y,Yes N,No *,*)
- &psv = trans(trunc(&psv,1) &z,No  Y,Yes N,No *,*)
+ &psv = trans(trunc(&psv,1) &z,Yes Y,Yes N,No *,*)
+ &syd = trans(trunc(&syd,1) &z,Yes Y,Yes N,No *,*)
  &ftpgp = trans(&ftpgp &z,P G,G P,P S,S)
 )PROC
 &mvs = trans(trunc(&mvs,1) &z,Yes Y,Yes N,No y,Yes n,No *,*)
@@ -54,12 +55,14 @@
 &fir = trans(trunc(&fir,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
 &tls = trans(trunc(&tls,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
 ver (&tls,nb,list,Yes,No)
-&psv = trans(trunc(&psv,1) &z,No  Y,Yes N,No y,Yes,n,No *,*)
+&psv = trans(trunc(&psv,1) &z,Yes Y,Yes N,No y,Yes,n,No *,*)
+&syd = trans(trunc(&syd,1) &z,Yes Y,Yes N,No y,Yes,n,No *,*)
 ver (&psv,nb,list,Yes,No)
 &egg = trans(&sdsname egg,EGG *,*)
 if (&egg NE EGG)
    if (&zcmd = &z)
       ver (&sdsname,nb)
+      ver (&ftpgp,nb,list,P,G,S)
       ver (&thost,nb)
       if (&usernrc EQ &Z)
           ver (&userid,nb)
@@ -74,7 +77,6 @@ if (&egg NE EGG)
           ver (&firewall,nb)
       ver (&bin,nb,list,Yes,No)
       ver (&mvs,nb,list,Yes,No)
-      ver (&ftpgp,nb,list,P,G,S)
  &resp = .resp
 *rexx(* zedsmsg zedlmsg csr resp)
   if resp = 'END' then exit
@@ -128,7 +130,6 @@ if (&egg NE EGG)
  Field(psv)      panel(ftpbhf14)
  Field(firewall) panel(ftpbhf8)
  Field(other)    panel(ftpbhf9)
- Field(other2)   panel(ftpbhf9)
  Field(post)     panel(ftpbhf10)
  Field(usernrc)  panel(ftpbhf13)
 )Field

@@ -11,7 +11,7 @@
 ~This field allows you to configure FTP for Passive
 ~mode. This is also known as Firewall Friendly.
 +
-~Yes or No.
+~Yes (default) or No.
 )INIT
  &zwinttl = 'FTP Passive Option'
  &zcont = ftpbhf6

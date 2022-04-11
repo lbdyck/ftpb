@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.020"
+  ftpbver = "2.021"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            04/11/2022  - 2.021  - Used EPSV4 with Passive     *
+  *                                 - Allow Sync display delta    *
   *            03/21/2022  - 2.020  - Allow multiple Compares on  *
   *                                   Sync                        *
   *                                 - Free FTP JCL DD after Sync  *
@@ -347,7 +349,7 @@
   "Vget (sdb vio dasd netrc netsec sysftpd njenode savepwd" ,
     "FirIDwH forcejbn jc1 jc2 jc3 jc4 sysftpds systcpd" ,
     "systcpds nomemopt nodsnopt tape steplib" ,
-    "netrcpre)"
+    "syd netrcpre)"
   Address TSO
 
   /* -------------------------- *
@@ -507,8 +509,8 @@ Start:
 Do_It:
   if pos("/",sdsname) = 0 then
   sdsname = translate(sdsname)
-  "Vput (sdsname thost userid bin mvs other other2 usernrc" ,
-    "thport fir tls psv firewall post ftpgp) Profile"
+  "Vput (sdsname thost userid bin mvs other usernrc" ,
+    "thport fir tls psv firewall syd post ftpgp) Profile"
 
   /* ------------------------ *
   * Test for Feedback option *
@@ -1629,17 +1631,12 @@ Set_FTP:
   ftp.0 = nn
   if translate(psv) = 'YES' then do
     nn = ftp.0 + 1
-    ftp.nn = 'locsite fwfriendly'
+    ftp.nn = 'locsite fwfriendly epsv4'
     ftp.0 = nn
   end
   if length(other) > 0 then do
     nn = ftp.0 + 1
     ftp.nn = other
-    ftp.0 = nn
-  end
-  if length(other2) > 0 then do
-    nn = ftp.0 + 1
-    ftp.nn = other2
     ftp.0 = nn
   end
   if bin = "Yes" then do
@@ -3427,13 +3424,9 @@ Check_Remote:
   fc = 0
   if translate(psv) = 'YES' then do
     fc = fc + 1
-    ftpx.fc = 'locsite fwfriendly'
+    ftpx.fc = 'locsite fwfriendly epsv4'
   end
   if strip(other) /= null then do
-    fc = fc + 1
-    ftpx.fc = other
-  end
-  if strip(other2) /= null then do
     fc = fc + 1
     ftpx.fc = other
   end
@@ -3623,13 +3616,9 @@ Get_Dataset_list:
   fc = 0
   if translate(psv) = 'YES' then do
     fc = fc + 1
-    ftpx.fc = 'locsite fwfriendly'
+    ftpx.fc = 'locsite fwfriendly epsv4'
   end
   if strip(other) /= null then do
-    fc = fc + 1
-    ftpx.fc = other
-  end
-  if strip(other2) /= null then do
     fc = fc + 1
     ftpx.fc = other
   end
@@ -3797,13 +3786,9 @@ Get_Member_Lists:
   fc = 0
   if translate(psv) = 'YES' then do
     fc = fc + 1
-    ftpx.fc = 'locsite fwfriendly'
+    ftpx.fc = 'locsite fwfriendly epsv4'
   end
   if strip(other) /= null then do
-    fc = fc + 1
-    ftpx.fc = other
-  end
-  if strip(other2) /= null then do
     fc = fc + 1
     ftpx.fc = other
   end
@@ -3927,7 +3912,11 @@ Get_Member_Lists:
     if mult = 1 then mult = 'mult('pds.0')'
     else mult = null
     if wordpos(fmem,mem.0) = 0 then fstate = 'PUT'
-    'tbadd' ftp_Table mult
+    if syd = 'Yes' then
+       if fstate /= null
+       then 'tbadd' ftp_Table mult
+    if syd = 'No'
+       then 'tbadd' ftp_Table mult
     if wordpos(fmem,transfer.0) = 0 then
     transfer.0 = transfer.0 fmem
     transfer.fmem = fstate
@@ -3953,7 +3942,11 @@ Get_Member_Lists:
       transfer.0 = transfer.0 fmem
       transfer.fmem = fstate
       members = members fmem
-      'tbadd' ftp_table
+     if syd = 'Yes' then
+        if fstate /= null
+        then 'tbadd' ftp_Table mult
+     if syd = 'No'
+        then 'tbadd' ftp_Table mult
     end
   end
 
@@ -3968,7 +3961,11 @@ Get_Member_Lists:
     transfer_count = transfer_count + 1
     transfer.0 = transfer.0 fmem
     transfer.fmem = fstate
-    'tbadd' ftp_table
+    if syd = 'Yes' then
+       if fstate /= null
+       then 'tbadd' ftp_Table mult
+    if syd = 'No'
+       then 'tbadd' ftp_Table mult
   end
 
   'tbtop' ftp_table
@@ -4086,13 +4083,9 @@ Proc_Member_List:
         fc = 0
         if translate(psv) = 'YES' then do
           fc = fc + 1
-          ftpx.fc = 'locsite fwfriendly'
+          ftpx.fc = 'locsite fwfriendly epsv4'
         end
         if strip(other) /= null then do
-          fc = fc + 1
-          ftpx.fc = other
-        end
-        if strip(other2) /= null then do
           fc = fc + 1
           ftpx.fc = other
         end
