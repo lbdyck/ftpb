@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.021"
+  ftpbver = "2.022"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            08/19/2022  - 2.022  - Allow user to cancel if to  *
+  *                                   dataset does not exist.     *
   *            04/11/2022  - 2.021  - Used EPSV4 with Passive     *
   *                                 - Allow Sync display delta    *
   *            03/21/2022  - 2.020  - Allow multiple Compares on  *
@@ -1328,7 +1330,15 @@ Do_Members:
     unl = "No"
   end
 
-  if mvs = 'Yes' then x = check_remote_dataset(targ_dsn)
+  if mvs = 'Yes' then do
+  x = check_remote_dataset(targ_dsn)
+  if x = 4 then do
+     zedsmsg = 'Cancelled.'
+     zedlmsg = 'You have cancelled the FTP request.'
+    'setmsg msg(isrz001)'
+     mem_err = 3
+     return
+     end
   if x = 2 then do
      zedsmsg = 'Error.'
      zedlmsg = 'You have not provided a valid userid/password to' ,
@@ -1344,6 +1354,7 @@ Do_Members:
     'setmsg msg(isrz001)'
      mem_err = 3
      return
+     end
      end
 
   Select
@@ -3483,6 +3494,12 @@ Do_Sync:
   if rpds = null then rpds = lpds
   tdsnamex = rpds
   x = check_remote_dataset(rpds)
+  if x = 4 then do
+     zedsmsg = 'Cancelled.'
+     zedlmsg = 'You have cancelled the FTP request.'
+    'setmsg msg(isrz001)'
+     return
+     end
   if x = 2 then do
      zedsmsg = 'Error.'
      zedlmsg = 'You have not provided a valid userid/password to' ,
