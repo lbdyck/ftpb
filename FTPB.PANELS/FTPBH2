@@ -2,7 +2,7 @@
 )ATTR Default(%+_)
 /* _ type( input) intens(high) caps(on ) just(left )               */
    @ type( input) intens(high) caps(on ) just(left ) hilite(uscore) color(turq)
-   ! type(output) intens(high) caps(off) just(asis ) color(white)
+   ! type(output) intens(high) color(blue)
    ` type(text) intens(high) caps(off) just(asis ) color(yellow)
    ~ type(text) intens(high) caps(off) just(asis ) color(turq)
    % type(text) intens(high)
@@ -58,6 +58,18 @@
 ~        Submit will take the generated JCL and FTP instructions and
 ~        submit them to the internal reader for execution in batch.
 ~
+%    R -+Create PDS with JCL for Restart
+~
+~        A PDS will be created under the users Prefix or Userid with
+~        two members. One for each of the above sets of JCL.
+~
+~           %Local~  The JCL submitted locally
+~           %Remote~ The JCL submitted via FTP to the remote system.
+~
+~           %PDS:~!pdsdsn
+~
+~        Note: A NETRC file is required for this as the dialog created
+~              temporary file only exists with a Submit.
 ~
 ~    The JOB cards displayed will be used if you select option%S~and is
 ~    available for changing here.  Any changes will be remembered

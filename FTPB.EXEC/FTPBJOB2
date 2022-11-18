@@ -11,6 +11,7 @@
   *           Southern California Edison                          *
   *                                                               *
   * History:                                                      *
+  *            11/18/22 - Check for IEFC452/3I (LBD)              *
   *            06/28/19 - used REXXFORM to reflow (LBD)           *
   *            02/17/09 - test for job cancel message (eh)        *
   *            09/04/98 - delete the rptdsn (lbd)                 *
@@ -93,6 +94,16 @@
   IF cond_max = 0 THEN DO
     /* IEF453I jobname - JOB FAILED - JCL ERROR - TIME=16.25.23 */
     DO jx = 1 TO jcl_1st UNTIL POS("IEF453I",j2l.jx) > 0; END /* JCL? */
+    IF jx < jcl_1st THEN cond_max = 3333 /* JCL error */
+  END
+  IF cond_max = 0 THEN DO
+    /* IEFC452I jobname - JOB NOT RUN - JCL ERROR */
+    DO jx = 1 TO jcl_1st UNTIL POS("IEFC452I",j2l.jx) > 0; END /* JCL? */
+    IF jx < jcl_1st THEN cond_max = 3333 /* JCL error */
+  END
+  IF cond_max = 0 THEN DO
+    /* IEFC453I jobname - JOB FAILED - JCL ERROR - TIME=16.25.23 */
+    DO jx = 1 TO jcl_1st UNTIL POS("IEFC453I",j2l.jx) > 0; END /* JCL? */
     IF jx < jcl_1st THEN cond_max = 3333 /* JCL error */
   END
   IF cond_max = 0 THEN DO /* no other problem, get highest cond code */

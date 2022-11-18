@@ -12,7 +12,7 @@
 +
 % B -~Browse+the generated FTP job       %E -~Edit+the generated FTP job
 % BL-~Browse+the generated Load JCL job  %EL-~Edit+the generated Load JCL job
-%                  S -~Submit+the generated FTP job
+% S -~Submit+the generated FTP job       %R -~Create PDS with JCL for Restart
 +
 ~    Remote host: @thost
 +
@@ -48,5 +48,5 @@
  if (&lj4 = &z)
     &lj4 = //*
 )PROC
- VER (&OPT,LIST,B,E,S,BL,EL)
+ VER (&OPT,LIST,B,E,S,BL,EL,R)
 )END

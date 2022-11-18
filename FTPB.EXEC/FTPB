@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.022"
+  ftpbver = "2.023"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,10 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            11/04/2022  - 2.023  - Submit option R added       *
+  *                                 - Thx to Dana Mitchell for    *
+  *                                   TSS commands to secure the  *
+  *                                   NETRC dataset               *
   *            08/19/2022  - 2.022  - Allow user to cancel if to  *
   *                                   dataset does not exist.     *
   *            04/11/2022  - 2.021  - Used EPSV4 with Passive     *
@@ -2655,6 +2659,12 @@ Fix_FTP:
 Do_FTP:
   call save_remote_jobcard
   submit_flag = null
+  tt = time('n')
+  tt = left(tt,2)substr(tt,4,2)
+  jsuf = ".FTPBJCL.D"date('j')".T"tt".PDS'"
+  if sysvar('syspref') = null
+     then pdsdsn = "'"sysvar('sysuid')''jsuf
+     else pdsdsn = "'"sysvar('syspref')''jsuf
   do forever
     if unl = "No" then
     "Display Panel(ftpbgs)"
@@ -2696,6 +2706,60 @@ Do_FTP:
     "Vput (lj1 lj2 lj3 lj4) Profile"
     call save_remote_jobcard
     Select
+      When opt = "R" then do
+        if usernrc = null then do
+        zedsmsg = null
+        zedlmsg = 'To use this option requires a NETRC dataset.',
+          'Put a ? in the Hostname field and then use the NETRC command',
+          'to create your personal NETRC dataset. It will be read/write' ,
+          'protected to you only.'
+        'setmsg msg(isrz001)'
+        end
+       else do
+        Address tso
+        if sysdsn(pdsdsn) = 'OK' then do
+           call outtrap 'x.'
+           'delete' pdsdsn
+           call outtrap 'off'
+           drop x.
+           end
+        'Alloc ds('pdsdsn') new spa(1,1) recfm(f b) lrecl(80)' ,
+            'blksize(27920) dsorg(po) dir(1) dsntype(library,2)'
+        'Free ds('pdsdsn')'
+
+        jcldsn = hlq"."loadjcl_dsn
+        rjcl = left(pdsdsn,length(pdsdsn)-1)
+        ljcl = rjcl"(local)'"
+        rjcl = rjcl"(REMOTE)'"
+
+        'Execio * diskr' ddn '(finis stem ljcl.'
+        do jcli = 1 to ljcl.0
+           if pos(jcldsn,ljcl.jcli) = 0 then iterate
+           p = pos(jcldsn,ljcl.jcli)
+           pl = length(jcldsn)
+           ljcl.jcli = left(ljcl.jcli,p-1) ,
+           || substr(rjcl,2,length(rjcl)-2) || substr(ljcl.jcli,p+pl)
+           leave
+           end
+
+        tddn = 'ftp'time('s')
+        'alloc f('tddn') ds('ljcl') shr'
+        'execio * diskw' tddn '(finis stem ljcl.'
+        'free f('tddn')'
+        "alloc f("tddn") shr ds('"jcldsn"')"
+        'execio * diskr 'tddn' (finis stem rjcl.'
+        'free f('tddn')'
+        'alloc f('tddn') ds('rjcl') shr'
+        'execio * diskw' tddn '(finis stem rjcl.'
+        'free f('tddn')'
+        address ispexec
+        "LMINIT DATAID(pdsegend) DATASET("pdsdsn") Enq(SHR)"
+        'LMMStats Dataid('pdsegend') Member(remote)'
+        'LMMStats Dataid('pdsegend') Member(local)'
+        'edit dataid('pdsegend')'
+        'LMFree  Dataid('pdsegend')'
+        end
+        end
       When opt = "S" then do
         submit_flag = 1
         Address TSO
@@ -3232,8 +3296,7 @@ Alloc_Netrc:
   * This routine will set the security access to the NETRC     *
   * data set so only the user can see it.                      *
   *                                                            *
-  * It is provided with RACF support. ACF2 and Top Secret      *
-  * or others will need to add comparable routines.            *
+  * It is provided with RACF, ACF2, and Top Secret (TSS).      *
   * ---------------------------------------------------------- */
 Set_Netsec:
   if usernrc /= null then return
@@ -3245,6 +3308,10 @@ Set_Netsec:
     end
     When netsec = "ACF2" then do
       "ACFNRULE KEY("sysvar('sysuid')" ADD( NETRC UID(*))"
+    end
+    When netsec = "TSS" then do
+      "tss permit(all) dsname("netrc_dsn") acc(none)"
+      "tss permit("sysvar('sysuid')" dsname("netrc_dsn") access(all)"
     end
     Otherwise nop
   end
