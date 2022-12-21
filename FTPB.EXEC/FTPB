@@ -1705,7 +1705,6 @@ Set_CD:
   else do
     nn = nn + 1
     ftp.nn = "cd" word(targ_dsn,tdw)
-    targ_dsn = null
   end
   ftp.0 = nn
   return
