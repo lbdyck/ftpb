@@ -78,9 +78,15 @@ if (&egg NE EGG)
       ver (&bin,nb,list,Yes,No)
       ver (&mvs,nb,list,Yes,No)
  &resp = .resp
-*rexx(* zedsmsg zedlmsg csr resp)
+*rexx(* zedsmsg zedlmsg csr resp sdsname tdsname)
   if resp = 'END' then exit
   parse value '' with zedsmsg zedlmsg null
+  if left(sdsname,1) = "'"
+     then if right(sdsname,1) /= "'"
+       then sdsname = sdsname"'"
+  if left(tdsname,1) = "'"
+     then if right(tdsname,1) /= "'"
+       then tdsname = tdsname"'"
   if pos(ftpgp,'GS') = 0
   then if mvs /= 'Yes' then do
     zedsmsg = 'Invalid'

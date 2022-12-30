@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.023"
+  ftpbver = "2.024"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            12/30/2022  - 2.024  - Fix if invalid host and     *
+  *                                   NETRC in use                *
   *            11/04/2022  - 2.023  - Submit option R added       *
   *                                 - Thx to Dana Mitchell for    *
   *                                   TSS commands to secure the  *
@@ -2931,6 +2933,7 @@ Setup_Remote_Jobcard:
   if userid = null then
   if usernrc /= null
   then userid = get_nrc_uid()
+  if userid = 0 then userid = sysvar('sysuid')
   parse value rj1 with "//" jobname "JOB" rest
   Uuserid = translate(userid)
   if forcejbn = "Y" then do
@@ -3181,7 +3184,7 @@ Get_NRC_Uid:
     end
   end
   drop nrc.
-  return
+  return 0
 
 Create_Table:
   "TBCreate ftpjobcd keys(targhost targport)",
