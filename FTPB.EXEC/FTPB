@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.024"
+  ftpbver = "2.025"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,9 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/01/2023  - 2.025  - Add delete step for unload  *
+  *                                   for iebcopy/adrdssu         *
+  *                                 - Clean up DELSTEP            *
   *            12/30/2022  - 2.024  - Fix if invalid host and     *
   *                                   NETRC in use                *
   *            11/04/2022  - 2.023  - Submit option R added       *
@@ -1097,11 +1100,6 @@ Do_It:
     nn = nn + 1
     ftp.nn = "//DELSTEP   EXEC PGM=IEFBR14"
     nn = nn + 1
-    ftp.nn = "//DELLOAD   DD  DISP=(OLD,DELETE),"
-    nn = nn + 1
-    ftp.nn = "//          DSN="hlq"."loadjcl_dsn
-    ftp.nn = translate(ftp.nn)
-    nn = nn + 1
     ftp.nn = "//DELULOAD  DD  DISP=(OLD,DELETE),"
     nn = nn + 1
     ftp.nn = "//          DSN="hlq"."unload_dst
@@ -1737,17 +1735,19 @@ Set_FTPGet_JCL:
 Build_IEBCOPY:
   put = "  S M=("
   putr = ")"
+
+  call set_unl_load
+
+  if left(from_dsn,1) <> "'"
+     then call fix_send_dsn
+     else send_dsn = translate(from_dsn)
+  call build_del_step
   nn = ftp.0 + 1
   ftp.nn = "//UNLOAD   EXEC PGM=IEBCOPY"
   nn = nn + 1
   ftp.nn = "//SYSPRINT  DD  SYSOUT=*"
   nn = nn + 1
-  if left(from_dsn,1) <> "'"
-  then call fix_send_dsn
-  else send_dsn = translate(from_dsn)
   ftp.nn = "//INPUT     DD  DISP=SHR,DSN="strip(send_dsn,,"'")
-
-  call set_unl_load
 
   if new = "Yes" then
   call ftp_site_info
@@ -1980,19 +1980,20 @@ Build_IEBCOPY:
   return
 
 build_dump:
+  if left(from_dsn,1) <> "'"
+     then call fix_send_dsn
+     else send_dsn = translate(from_dsn)
+  call set_unl_load
+  call build_del_step
   nn = ftp.0 + 1
   ftp.nn = "//UNLOAD   EXEC PGM=ADRDSSU"
   nn = nn + 1
   ftp.nn = "//SYSPRINT  DD  SYSOUT=*"
-  if left(from_dsn,1) <> "'"
-  then call fix_send_dsn
-  else send_dsn = translate(from_dsn)
 
   if multiple <> "on" then
   if sysdsorg = "VS" then do
     call find_vsam_space send_dsn
   end
-  call set_unl_load
   nn = nn + 1
   ftp.nn = "//OUTPUT    DD  DISP=(,CATLG),UNIT="dasd","
   nn = nn + 1
@@ -2205,6 +2206,20 @@ build_dump:
     members = null
     do_pds_flag = 1
   end
+  return
+
+Build_Del_Step:
+  nn = ftp.0 + 1
+  ftp.nn = '/* '
+  nn = nn + 1
+  ftp.nn = '//PREDEL  EXEC PGM=IEFBR14'
+  nn = nn + 1
+  ftp.nn = '//DELDD   DD DISP=(MOD,DELETE,DELETE),UNIT=SYSDA,'
+  nn = nn + 1
+  ftp.nn = '//           SPACE=(1,1),DSN='strip(unload_dsn,,"'")
+  nn = nn + 1
+  ftp.nn = '/* '
+  ftp.0 = nn
   return
 
   /* -------------------------- *
@@ -3836,7 +3851,9 @@ Get_Dataset_list:
       rep = null
       call fix_get_dsn
       gftpc = gftpc + 1
-      ftp.gftpc = 'mvsget' "'"gdsn"' '"newdsn"' (Realloc"
+      ftp.gftpc = 'mvsget' "'"gdsn"' +"
+      gftpc = gftpc + 1
+      ftp.gftpc = "   '"newdsn"' (Realloc"
     end
     gftpc = gftpc + 1
     ftp.gftpc = 'quit'
