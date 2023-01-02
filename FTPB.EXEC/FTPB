@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.025"
+  ftpbver = "2.026"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,10 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/01/2023  - 2.026  - Restore DELSTEP for Load DD *
+  *                                   for iebcopy/adrdssu         *
+  *                                 - Comment DELLOAD DD in Local *
+  *                                   JCL for DELSTEP for Restart *
   *            01/01/2023  - 2.025  - Add delete step for unload  *
   *                                   for iebcopy/adrdssu         *
   *                                 - Clean up DELSTEP            *
@@ -1099,6 +1103,11 @@ Do_It:
        end
     nn = nn + 1
     ftp.nn = "//DELSTEP   EXEC PGM=IEFBR14"
+    nn = nn + 1
+    ftp.nn = "//DELLOAD   DD  DISP=(OLD,DELETE),"
+    nn = nn + 1
+    ftp.nn = "//          DSN="hlq"."loadjcl_dsn
+    ftp.nn = translate(ftp.nn)
     nn = nn + 1
     ftp.nn = "//DELULOAD  DD  DISP=(OLD,DELETE),"
     nn = nn + 1
@@ -2750,12 +2759,17 @@ Do_FTP:
 
         'Execio * diskr' ddn '(finis stem ljcl.'
         do jcli = 1 to ljcl.0
+           if pos('//DELLOAD',ljcl.jcli) > 0 then do
+              ljcl.jcli = '//*DELLOAD DD  Commented out'
+              jcli = jcli + 1
+              ljcl.jcli = '//*  Commented out'
+              jcli = jcli + 1
+              end
            if pos(jcldsn,ljcl.jcli) = 0 then iterate
            p = pos(jcldsn,ljcl.jcli)
            pl = length(jcldsn)
            ljcl.jcli = left(ljcl.jcli,p-1) ,
            || substr(rjcl,2,length(rjcl)-2) || substr(ljcl.jcli,p+pl)
-           leave
            end
 
         tddn = 'ftp'time('s')
