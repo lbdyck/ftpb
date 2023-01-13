@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.026"
+  ftpbver = "2.027"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,12 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/13/2023  - 2.027  - Correct Sync double Ignore  *
+  *                                 - Correct Sync xfer counter   *
+  *                                 - Update Sync for NoStats and *
+  *                                   Not There                   *
+  *                                 - Update Sync dates with .    *
+  *                                 - Used REXXFORM 3 2 to reflow *
   *            01/01/2023  - 2.026  - Restore DELSTEP for Load DD *
   *                                   for iebcopy/adrdssu         *
   *                                 - Comment DELLOAD DD in Local *
@@ -845,9 +851,9 @@ Do_It:
   end
 
   if sysalloc = null then do
-     sysalloc = 1
-     sysseconds = 1
-     end
+    sysalloc = 1
+    sysseconds = 1
+  end
   parse value sysalloc*1.5 with sysalloc'.'.
   balloc = "("sysalloc","sysseconds")"
   palloc = "("sysalloc","sysseconds")"
@@ -1098,9 +1104,9 @@ Do_It:
   if unl = "Yes" then do
     call set_ftpget_jcl
     if ftpif = 1 then do
-       nn = nn + 1
-       ftp.nn = "//    ENDIF"
-       end
+      nn = nn + 1
+      ftp.nn = "//    ENDIF"
+    end
     nn = nn + 1
     ftp.nn = "//DELSTEP   EXEC PGM=IEFBR14"
     nn = nn + 1
@@ -1125,9 +1131,9 @@ Do_It:
   if unl = "xxx" then do
     call set_ftpget_jcl
     if ftpif = 1 then do
-       nn = ftp.0 + 1
-       ftp.nn = "//    ENDIF"
-       end
+      nn = ftp.0 + 1
+      ftp.nn = "//    ENDIF"
+    end
     ftp.0 = nn
   end /* if unload */
 
@@ -1344,31 +1350,31 @@ Do_Members:
   end
 
   if mvs = 'Yes' then do
-  x = check_remote_dataset(targ_dsn)
-  if x = 4 then do
-     zedsmsg = 'Cancelled.'
-     zedlmsg = 'You have cancelled the FTP request.'
-    'setmsg msg(isrz001)'
-     mem_err = 3
-     return
-     end
-  if x = 2 then do
-     zedsmsg = 'Error.'
-     zedlmsg = 'You have not provided a valid userid/password to' ,
-               'connect to the remote system.'
-    'setmsg msg(isrz001)'
-     mem_err = 3
-     return
-     end
-  if x = 3 then do
-     zedsmsg = 'Error.'
-     zedlmsg = 'You have not provided a valid remote hostname or' ,
-               'I.P. address.'
-    'setmsg msg(isrz001)'
-     mem_err = 3
-     return
-     end
-     end
+    x = check_remote_dataset(targ_dsn)
+    if x = 4 then do
+      zedsmsg = 'Cancelled.'
+      zedlmsg = 'You have cancelled the FTP request.'
+      'setmsg msg(isrz001)'
+      mem_err = 3
+      return
+    end
+    if x = 2 then do
+      zedsmsg = 'Error.'
+      zedlmsg = 'You have not provided a valid userid/password to' ,
+        'connect to the remote system.'
+      'setmsg msg(isrz001)'
+      mem_err = 3
+      return
+    end
+    if x = 3 then do
+      zedsmsg = 'Error.'
+      zedlmsg = 'You have not provided a valid remote hostname or' ,
+        'I.P. address.'
+      'setmsg msg(isrz001)'
+      mem_err = 3
+      return
+    end
+  end
 
   Select
     when unl = "No" then do
@@ -1442,19 +1448,19 @@ Do_Members:
   Select
     When members = "*" then
     if unl = "No" then do
-       'AddPop Row(5) Column(10)'
-       'display panel(ftpbunld)'
-       'rempop'
-       if ftpbunld = 'Y' then do
-          unl = 'Yes'
-          ftp.0 = ftpstep - 1
-          call build_iebcopy
-       end
-       else do
-            nn     = ftp.0 + 1
-            ftp.nn = "mput *"
-            ftp.0  =  nn
-            end
+      'AddPop Row(5) Column(10)'
+      'display panel(ftpbunld)'
+      'rempop'
+      if ftpbunld = 'Y' then do
+        unl = 'Yes'
+        ftp.0 = ftpstep - 1
+        call build_iebcopy
+      end
+      else do
+        nn     = ftp.0 + 1
+        ftp.nn = "mput *"
+        ftp.0  =  nn
+      end
     end
     When pos("*",members) > 0 then do
       call do_pds
@@ -1490,17 +1496,17 @@ Do_Members:
     When length(members) = 0 then do
       call do_pds
       if unl = 'No' then
-         if words(members) > pds_unld | strip(members) = null
-         then do
-            'AddPop Row(5) Column(10)'
-            'display panel(ftpbunld)'
-            'rempop'
-            if ftpbunld = 'Y' then do
-               unl = 'Yes'
-               ftp.0 = ftpstep - 1
-               call build_iebcopy
-            end
-         end
+      if words(members) > pds_unld | strip(members) = null
+      then do
+        'AddPop Row(5) Column(10)'
+        'display panel(ftpbunld)'
+        'rempop'
+        if ftpbunld = 'Y' then do
+          unl = 'Yes'
+          ftp.0 = ftpstep - 1
+          call build_iebcopy
+        end
+      end
       if words(members) = 0 then
       if nomemopt = 1 then do
         mem_err = 2
@@ -1553,10 +1559,10 @@ Build_List:
 Set_FTP:
   nn = ftp.0 + 1
   if unl = 'Yes' then do
-     ftp.nn = "//   IF  ^ABEND && UNLOAD.RC <= 4 THEN"
-     ftpif = 1
-     nn = nn + 1
-     end
+    ftp.nn = "//   IF  ^ABEND && UNLOAD.RC <= 4 THEN"
+    ftpif = 1
+    nn = nn + 1
+  end
   if mhst /= null then
   parse value strip(mhst) with thost":"thport":"tls .
   if tls = 'Yes'
@@ -1748,8 +1754,8 @@ Build_IEBCOPY:
   call set_unl_load
 
   if left(from_dsn,1) <> "'"
-     then call fix_send_dsn
-     else send_dsn = translate(from_dsn)
+  then call fix_send_dsn
+  else send_dsn = translate(from_dsn)
   call build_del_step
   nn = ftp.0 + 1
   ftp.nn = "//UNLOAD   EXEC PGM=IEBCOPY"
@@ -1833,12 +1839,12 @@ Build_IEBCOPY:
   end
   nn = nn + 1
   if tdsname /= null
-     then targ_dsn = tdsname
-     else targ_dsn = sdsname
+  then targ_dsn = tdsname
+  else targ_dsn = sdsname
   if pos('(*)',targ_dsn) > 0 then do
-     parse value targ_dsn with ld'(*)'rd
-     targ_dsn = ld''rd
-     end
+    parse value targ_dsn with ld'(*)'rd
+    targ_dsn = ld''rd
+  end
   if left(targ_dsn,1) = "'" then
   load.nn = "//OUTPUT    DD  DSN="strip(targ_dsn,,"'")","
   else do
@@ -1874,10 +1880,10 @@ Build_IEBCOPY:
     else spx = word(space,1)
     if spx = 0 then spx = 32760
     if pos('direct=',space) > 0
-       then do
-            parse value sp with .'direct='dir
-            palloc = "("sysalloc","sysseconds","dir")"
-            end
+    then do
+      parse value sp with .'direct='dir
+      palloc = "("sysalloc","sysseconds","dir")"
+    end
     load.nn = "//          SPACE=("spx","palloc""rlse")"
   end
   if ut3 = "Yes" then do
@@ -1990,8 +1996,8 @@ Build_IEBCOPY:
 
 build_dump:
   if left(from_dsn,1) <> "'"
-     then call fix_send_dsn
-     else send_dsn = translate(from_dsn)
+  then call fix_send_dsn
+  else send_dsn = translate(from_dsn)
   call set_unl_load
   call build_del_step
   nn = ftp.0 + 1
@@ -2140,16 +2146,16 @@ build_dump:
       load.nn = "          RENAMEU("sdsname", - "
       nn      = nn + 1
       if left(tdsname,1) = "'" then
-         tdsname = strip(tdsname,,"'")
+      tdsname = strip(tdsname,,"'")
       if right(sdsname,2) = '.*'
-         then sdsname = sdsname'*'
+      then sdsname = sdsname'*'
       if right(sdsname,1) = '*' then
       Select
         When right(tdsname,2) = '.*' then
-             tdsname = tdsname"*"
+        tdsname = tdsname"*"
         When right(tdsname,3) = '.**' then nop
         Otherwise tdsname = tdsname'.**'
-        end
+      end
       rt_dsn = translate(strip(tdsname,,"'"))
       load.nn = "                  "rt_dsn") -"
     end
@@ -2688,8 +2694,8 @@ Do_FTP:
   tt = left(tt,2)substr(tt,4,2)
   jsuf = ".FTPBJCL.D"date('j')".T"tt".PDS'"
   if sysvar('syspref') = null
-     then pdsdsn = "'"sysvar('sysuid')''jsuf
-     else pdsdsn = "'"sysvar('syspref')''jsuf
+  then pdsdsn = "'"sysvar('sysuid')''jsuf
+  else pdsdsn = "'"sysvar('syspref')''jsuf
   do forever
     if unl = "No" then
     "Display Panel(ftpbgs)"
@@ -2733,63 +2739,63 @@ Do_FTP:
     Select
       When opt = "R" then do
         if usernrc = null then do
-        zedsmsg = null
-        zedlmsg = 'To use this option requires a NETRC dataset.',
-          'Put a ? in the Hostname field and then use the NETRC command',
-          'to create your personal NETRC dataset. It will be read/write' ,
-          'protected to you only.'
-        'setmsg msg(isrz001)'
+          zedsmsg = null
+          zedlmsg = 'To use this option requires a NETRC dataset.',
+            'Put a ? in the Hostname field and then use the NETRC command',
+            'to create your personal NETRC dataset. It will be read/write' ,
+            'protected to you only.'
+          'setmsg msg(isrz001)'
         end
-       else do
-        Address tso
-        if sysdsn(pdsdsn) = 'OK' then do
-           call outtrap 'x.'
-           'delete' pdsdsn
-           call outtrap 'off'
-           drop x.
-           end
-        'Alloc ds('pdsdsn') new spa(1,1) recfm(f b) lrecl(80)' ,
+        else do
+          Address tso
+          if sysdsn(pdsdsn) = 'OK' then do
+            call outtrap 'x.'
+            'delete' pdsdsn
+            call outtrap 'off'
+            drop x.
+          end
+          'Alloc ds('pdsdsn') new spa(1,1) recfm(f b) lrecl(80)' ,
             'blksize(27920) dsorg(po) dir(1) dsntype(library,2)'
-        'Free ds('pdsdsn')'
+          'Free ds('pdsdsn')'
 
-        jcldsn = hlq"."loadjcl_dsn
-        rjcl = left(pdsdsn,length(pdsdsn)-1)
-        ljcl = rjcl"(local)'"
-        rjcl = rjcl"(REMOTE)'"
+          jcldsn = hlq"."loadjcl_dsn
+          rjcl = left(pdsdsn,length(pdsdsn)-1)
+          ljcl = rjcl"(local)'"
+          rjcl = rjcl"(REMOTE)'"
 
-        'Execio * diskr' ddn '(finis stem ljcl.'
-        do jcli = 1 to ljcl.0
-           if pos('//DELLOAD',ljcl.jcli) > 0 then do
+          'Execio * diskr' ddn '(finis stem ljcl.'
+          do jcli = 1 to ljcl.0
+            if pos('//DELLOAD',ljcl.jcli) > 0 then do
               ljcl.jcli = '//*DELLOAD DD  Commented out'
               jcli = jcli + 1
               ljcl.jcli = '//*  Commented out'
               jcli = jcli + 1
-              end
-           if pos(jcldsn,ljcl.jcli) = 0 then iterate
-           p = pos(jcldsn,ljcl.jcli)
-           pl = length(jcldsn)
-           ljcl.jcli = left(ljcl.jcli,p-1) ,
-           || substr(rjcl,2,length(rjcl)-2) || substr(ljcl.jcli,p+pl)
-           end
+            end
+            if pos(jcldsn,ljcl.jcli) = 0 then iterate
+            p = pos(jcldsn,ljcl.jcli)
+            pl = length(jcldsn)
+            ljcl.jcli = left(ljcl.jcli,p-1) ,
+              || substr(rjcl,2,length(rjcl)-2) || substr(ljcl.jcli,p+pl)
+          end
 
-        tddn = 'ftp'time('s')
-        'alloc f('tddn') ds('ljcl') shr'
-        'execio * diskw' tddn '(finis stem ljcl.'
-        'free f('tddn')'
-        "alloc f("tddn") shr ds('"jcldsn"')"
-        'execio * diskr 'tddn' (finis stem rjcl.'
-        'free f('tddn')'
-        'alloc f('tddn') ds('rjcl') shr'
-        'execio * diskw' tddn '(finis stem rjcl.'
-        'free f('tddn')'
-        address ispexec
-        "LMINIT DATAID(pdsegend) DATASET("pdsdsn") Enq(SHR)"
-        'LMMStats Dataid('pdsegend') Member(remote)'
-        'LMMStats Dataid('pdsegend') Member(local)'
-        'edit dataid('pdsegend')'
-        'LMFree  Dataid('pdsegend')'
+          tddn = 'ftp'time('s')
+          'alloc f('tddn') ds('ljcl') shr'
+          'execio * diskw' tddn '(finis stem ljcl.'
+          'free f('tddn')'
+          "alloc f("tddn") shr ds('"jcldsn"')"
+          'execio * diskr 'tddn' (finis stem rjcl.'
+          'free f('tddn')'
+          'alloc f('tddn') ds('rjcl') shr'
+          'execio * diskw' tddn '(finis stem rjcl.'
+          'free f('tddn')'
+          address ispexec
+          "LMINIT DATAID(pdsegend) DATASET("pdsdsn") Enq(SHR)"
+          'LMMStats Dataid('pdsegend') Member(remote)'
+          'LMMStats Dataid('pdsegend') Member(local)'
+          'edit dataid('pdsegend')'
+          'LMFree  Dataid('pdsegend')'
         end
-        end
+      end
       When opt = "S" then do
         submit_flag = 1
         Address TSO
@@ -3552,9 +3558,9 @@ Check_Remote:
   do i = 1 to out.0
     if pos('No data sets found.',out.i) > 0 then return 1
     if pos('530 You must first login with USER and PASS.',out.i) > 0
-       then return 2
+    then return 2
     if pos('Connection to server interrupted or timed out.',out.i) > 0
-       then return 3
+    then return 3
   end
   return 0
 
@@ -3593,25 +3599,25 @@ Do_Sync:
   tdsnamex = rpds
   x = check_remote_dataset(rpds)
   if x = 4 then do
-     zedsmsg = 'Cancelled.'
-     zedlmsg = 'You have cancelled the FTP request.'
+    zedsmsg = 'Cancelled.'
+    zedlmsg = 'You have cancelled the FTP request.'
     'setmsg msg(isrz001)'
-     return
-     end
+    return
+  end
   if x = 2 then do
-     zedsmsg = 'Error.'
-     zedlmsg = 'You have not provided a valid userid/password to' ,
-               'connect to the remote system.'
+    zedsmsg = 'Error.'
+    zedlmsg = 'You have not provided a valid userid/password to' ,
+      'connect to the remote system.'
     'setmsg msg(isrz001)'
-     return
-     end
+    return
+  end
   if x = 3 then do
-     zedsmsg = 'Error.'
-     zedlmsg = 'You have not provided a valid remote hostname or' ,
-               'I.P. address.'
+    zedsmsg = 'Error.'
+    zedlmsg = 'You have not provided a valid remote hostname or' ,
+      'I.P. address.'
     'setmsg msg(isrz001)'
-     return
-     end
+    return
+  end
   if new = 'Yes' then
   call ftp_site_info
   m1 = 'Getting a list of all members from both'
@@ -3757,19 +3763,19 @@ Get_Dataset_list:
   do gdx = 1 to out.0
     if subword(out.gdx,2,2) = 'Volume Unit' then leave
     if pos('530 You must first login with USER and PASS.',out.gdx) > 0
-       then do
-       zedsmsg = 'Error.'
-       zedlmsg = out.gdx
+    then do
+      zedsmsg = 'Error.'
+      zedlmsg = out.gdx
       'Setmsg msg(isrz001)'
       return
-      end
+    end
     if pos('Connection to server interrupted or timed out.',out.gdx) > 0
-       then do
-       zedsmsg = 'Error.'
-       zedlmsg = out.gdx
+    then do
+      zedsmsg = 'Error.'
+      zedlmsg = out.gdx
       'Setmsg msg(isrz001)'
       return
-      end
+    end
   end
   gcount = 0
   gact = null
@@ -3932,6 +3938,7 @@ Get_Member_Lists:
 
   drop mem.
   mem. = null
+
   /* Process remote PDS directory from FTP Log */
   do i = 1 to out.0
     if pos('VV.MM',out.i) > 0 then leave
@@ -3959,8 +3966,10 @@ Get_Member_Lists:
       rsize    = word(out.ip,off+5)
     end
     mem.0 = mem.0 member
+    if chg_date = null then chg_date = '-NoStats-'
     mem.member = chg_date chg_time rsize
   end
+
   /* Process the local PDS directory from trap */
   ftp_table = 'FT'random(99999)
   'tbcreate' ftp_table 'names(fmem fstate ldate ltime lsize' ,
@@ -3976,10 +3985,13 @@ Get_Member_Lists:
     if wordpos(member,members) = 0 then members = members member
     chg_time = null
     chg_date = word(pds.ip,4)
+    if chg_date = null
+    then chg_date = '-NoStats-'
     if strip(chg_date) /= null then do
       chg_time = word(pds.ip,5)
       lsize = word(pds.ip,6)
     end
+    if chg_date /= '-NoStats-' then
     if strip(chg_date) /= null then do
       if strip(chg_date) /= null then  do
         chg_date = left(chg_date,2)''substr(chg_date,4,2)''right(chg_date,2)
@@ -4019,21 +4031,28 @@ Get_Member_Lists:
 
     fmem = member
     ldate = chg_date
+    if ldate /= '-NoStats-' then
+    if strip(ldate) /= null then
+      ldate = left(ldate,4)'.'substr(ldate,6,2)'.'right(ldate,2)
     if chg_time /= null then
-    ltime = left(chg_time,2)''right(chg_time,2)
+    ltime = left(chg_time,2)':'right(chg_time,2)
     rdate = word(mem.member,1)
+    if left(rdate,1) /= '-' then
+    if strip(rdate) /= null then
+      rdate = left(rdate,4)'.'substr(rdate,6,2)'.'right(rdate,2)
     rtime = word(mem.member,2)
     rsize = word(mem.member,3)
     if rtime /= null then
-    rtime = left(word(mem.member,2),2)''right(word(mem.member,2),2)
+    rtime = left(word(mem.member,2),2)':'right(word(mem.member,2),2)
     if mult = 1 then mult = 'mult('pds.0')'
     else mult = null
     if wordpos(fmem,mem.0) = 0 then fstate = 'PUT'
+    if rdate = null then rdate = '-NotFound-'
     if syd = 'Yes' then
-       if fstate /= null
-       then 'tbadd' ftp_Table mult
+    if fstate /= null
+    then 'tbadd' ftp_Table mult
     if syd = 'No'
-       then 'tbadd' ftp_Table mult
+    then 'tbadd' ftp_Table mult
     if wordpos(fmem,transfer.0) = 0 then
     transfer.0 = transfer.0 fmem
     transfer.fmem = fstate
@@ -4050,8 +4069,9 @@ Get_Member_Lists:
     if wordpos(fmem,members) > 0 then iterate
     rtime = null
     rdate = word(out.ip,off+3)
+    if left(rdate,1) /= '-' then
     if strip(rdate) /= null then do
-      rdate = left(rdate,4)''substr(rdate,6,2)''right(rdate,2)
+      rdate = left(rdate,4)'.'substr(rdate,6,2)'.'right(rdate,2)
       rtime = word(out.ip,off+4)
       rsize = word(out.ip,off+5)
       fstate = 'GET'
@@ -4059,11 +4079,13 @@ Get_Member_Lists:
       transfer.0 = transfer.0 fmem
       transfer.fmem = fstate
       members = members fmem
-     if syd = 'Yes' then
-        if fstate /= null
-        then 'tbadd' ftp_Table mult
-     if syd = 'No'
-        then 'tbadd' ftp_Table mult
+      if ldate = null then ldate = '-NotFound-'
+      if rdate = null then rdate = '-NotFound-'
+      if syd = 'Yes' then
+      if fstate /= null
+      then 'tbadd' ftp_Table mult
+      if syd = 'No'
+      then 'tbadd' ftp_Table mult
     end
   end
 
@@ -4071,7 +4093,8 @@ Get_Member_Lists:
     fmem = word(mem.0,i)
     if wordpos(fmem,members) > 0 then iterate
     parse value mem.fmem with rdate rtime rsize
-    rdate = left(rdate,4)''substr(rdate,6,2)''right(rdate,2)
+    if left(rdate,1) /= '-' then
+       rdate = left(rdate,4)'.'substr(rdate,6,2)'.'right(rdate,2)
     rtime = word(out.ip,off+4)
     rsize = word(out.ip,off+5)
     fstate = 'GET'
@@ -4079,10 +4102,10 @@ Get_Member_Lists:
     transfer.0 = transfer.0 fmem
     transfer.fmem = fstate
     if syd = 'Yes' then
-       if fstate /= null
-       then 'tbadd' ftp_Table mult
+    if fstate /= null
+    then 'tbadd' ftp_Table mult
     if syd = 'No'
-       then 'tbadd' ftp_Table mult
+    then 'tbadd' ftp_Table mult
   end
 
   'tbtop' ftp_table
@@ -4229,66 +4252,70 @@ Proc_Member_List:
           'vput (tempds rpds fmem) shared'
           'Edit dataset('cplds') macro(ftpbredt)'
           if rc > 0 then do
-             'setmsg msg(isrz003)'
-             end
+            'setmsg msg(isrz003)'
+          end
           'control display restore'
         end
         else do
-           zedsmsg = 'Error.'
-           zedlmsg = 'The remote PDS member was not retrieved. This could' ,
+          zedsmsg = 'Error.'
+          zedlmsg = 'The remote PDS member was not retrieved. This could' ,
             'be caused by the PDS/PDS-Member having an exclusive ENQ' ,
             'at the remote site.'
-           'setmsg msg(isrz001)'
-           end
+          'setmsg msg(isrz001)'
+        end
         call outtrap 'x.'
         address tso 'free f('tempdd') delete'
         call outtrap 'off'
       end
       when fsel = 'D' then do
         if fstate = null then
-        transfer_count = transfer_count + 1
         fstate = 'DELETE'
         'tbput' ftp_table
-        if wordpos(fmem,transfer.0) = 0 then
-        transfer.0 = transfer.0 fmem
+        if wordpos(fmem,transfer.0) = 0 then do
+          transfer.0 = transfer.0 fmem
+          transfer_count = transfer_count + 1
+        end
         transfer.fmem = fstate
       end
       when fsel = 'R' then do
         if fstate = null then
-        transfer_count = transfer_count + 1
         fstate = 'REMOVE'
         'tbput' ftp_table
-        if wordpos(fmem,transfer.0) = 0 then
-        transfer.0 = transfer.0 fmem
+        if wordpos(fmem,transfer.0) = 0 then do
+          transfer.0 = transfer.0 fmem
+          transfer_count = transfer_count + 1
+        end
         transfer.fmem = fstate
       end
       when fsel = 'G' then do
         if fstate = null then
-        transfer_count = transfer_count + 1
         fstate = 'GET'
         'tbput' ftp_table
-        if wordpos(fmem,transfer.0) = 0 then
-        transfer.0 = transfer.0 fmem
+        if wordpos(fmem,transfer.0) = 0 then do
+          transfer.0 = transfer.0 fmem
+          transfer_count = transfer_count + 1
+        end
         transfer.fmem = fstate
       end
       when fsel = 'P' then do
         if fstate = null then
-        transfer_count = transfer_count + 1
         fstate = 'PUT'
         'tbput' ftp_table
         transfer.fmem = fstate
-        if wordpos(fmem,transfer.0) = 0 then
-        transfer.0 = transfer.0 fmem
+        if wordpos(fmem,transfer.0) = 0 then do
+          transfer.0 = transfer.0 fmem
+          transfer_count = transfer_count + 1
+        end
       end
       when fsel = 'I' then do
         fstate = null
         'tbput' ftp_table
         transfer.fmem = fstate
-        /* Comment Start
-        transfer_count = transfer_count - 1
-           Comment End */
         p = wordpos(fmem,transfer.0)
-        transfer.0 = delword(transfer.0,p,1)
+        if p > 0 then do
+          transfer.0 = delword(transfer.0,p,1)
+          transfer_count = transfer_count - 1
+        end
         if clear_flag = 1 then
         'tbdelete' ftp_table
       end
@@ -4351,14 +4378,14 @@ Proc_Member_List:
     fstate = transfer.fmem
     if fstate = 'GET' then fmem = fmem '( Replace'
     if fstate = 'REMOVE' then do
-       if left(lpds,1) = "'" then do
-          parse value lpds with "'"dpds"'"
-          dpds = "'"dpds"("fmem")'"
-          end
-       else dpds = lpds'('fmem')'
-       fstate = 'TSO DELETE' dpds
-       fmem = null
-       end
+      if left(lpds,1) = "'" then do
+        parse value lpds with "'"dpds"'"
+        dpds = "'"dpds"("fmem")'"
+      end
+      else dpds = lpds'('fmem')'
+      fstate = 'TSO DELETE' dpds
+      fmem = null
+    end
     ftpx.ftpc = fstate fmem
     fstate = null
   end
@@ -4463,9 +4490,9 @@ PATMATCH: Procedure
   ELSE RETURN 0                      /* Else, sorry, not a match.       */
   /*-End of PATMATCH function-------------------------------------------*/
 
-/* -------------------------- *
- | Rebuild the FTPJOBCD table |
- * -------------------------- */
+  /* -------------------------- *
+  | Rebuild the FTPJOBCD table |
+  * -------------------------- */
 Update_FTPJOBCD_Table: procedure expose null
   'tbtop ftpjobcd'
   c = 0
