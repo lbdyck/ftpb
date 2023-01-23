@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.027"
+  ftpbver = "2.028"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/23/2023  - 2.028  - Allow No for NONE on DSS    *
+  *                                   restore                     *
   *            01/13/2023  - 2.027  - Correct Sync double Ignore  *
   *                                 - Correct Sync xfer counter   *
   *                                 - Update Sync for NoStats and *
@@ -2103,7 +2105,7 @@ build_dump:
   end
   if odymc <> null then do
     Select
-      when odymc = "NONE" then mc = "NMC"
+      when abbrev('NONE',odymc,2) = 1 then mc = "NMC"
       otherwise mc = "MGMTCLAS("odymc")"
     end
     nn = nn + 1
@@ -2111,7 +2113,7 @@ build_dump:
   end
   if odysc <> null then do
     Select
-      when odysc = "NONE" then sc = "NSC"
+      when abbrev('NONE',odysc,2) = 1 then sc = "NSC"
       otherwise sc = "STORCLAS("odysc")"
     end
     nn = nn + 1

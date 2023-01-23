@@ -42,6 +42,8 @@
  ver (&val,nb,list,All,Used)
  &vrp = trans(trunc(&vrp,1) Y,Yes N,No y,Yes n,No *,*)
  ver (&vrp,nb,list,Yes,No)
+ ver (&odymc,name)
+ ver (&odysc,name)
  &otenq = trans(trunc(&otenq,1) Y,Yes N,No y,Yes n,No)
  ver (&otenq,nb,list,Yes,No)
 )END
