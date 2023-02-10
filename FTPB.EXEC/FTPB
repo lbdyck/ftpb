@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.028"
+  ftpbver = "2.029"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            02/10/2023  - 2.029  - Correct dates on Sync       *
   *            01/23/2023  - 2.028  - Allow No for NONE on DSS    *
   *                                   restore                     *
   *            01/13/2023  - 2.027  - Correct Sync double Ignore  *
@@ -3967,6 +3968,7 @@ Get_Member_Lists:
       chg_time = left(chg_time,2)''right(chg_time,2)
       rsize    = word(out.ip,off+5)
     end
+if member = 'remote CPM2TMPJ' then say member chg_date /* $$ */
     mem.0 = mem.0 member
     if chg_date = null then chg_date = '-NoStats-'
     mem.member = chg_date chg_time rsize
@@ -4009,6 +4011,7 @@ Get_Member_Lists:
         chg_time = right(hh+100,2)''mm
       end
     end
+if member = 'local  CPM2TMPJ' then say member chg_date /* $$ */
 
     if alloc = 0 then do
       fstate = null
@@ -4035,13 +4038,13 @@ Get_Member_Lists:
     ldate = chg_date
     if ldate /= '-NoStats-' then
     if strip(ldate) /= null then
-      ldate = left(ldate,4)'.'substr(ldate,6,2)'.'right(ldate,2)
+      ldate = left(ldate,4)'.'substr(ldate,5,2)'.'right(ldate,2)
     if chg_time /= null then
     ltime = left(chg_time,2)':'right(chg_time,2)
     rdate = word(mem.member,1)
     if left(rdate,1) /= '-' then
     if strip(rdate) /= null then
-      rdate = left(rdate,4)'.'substr(rdate,6,2)'.'right(rdate,2)
+      rdate = left(rdate,4)'.'substr(rdate,5,2)'.'right(rdate,2)
     rtime = word(mem.member,2)
     rsize = word(mem.member,3)
     if rtime /= null then
