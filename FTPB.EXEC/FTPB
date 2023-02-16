@@ -1,5 +1,5 @@
   /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.029"
+  ftpbver = "2.030"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -58,6 +58,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            02/16/2023  - 2.030  - Fix Sync Get/Put changes    *
   *            02/10/2023  - 2.029  - Correct dates on Sync       *
   *            01/23/2023  - 2.028  - Allow No for NONE on DSS    *
   *                                   restore                     *
@@ -4273,7 +4274,6 @@ Proc_Member_List:
         call outtrap 'off'
       end
       when fsel = 'D' then do
-        if fstate = null then
         fstate = 'DELETE'
         'tbput' ftp_table
         if wordpos(fmem,transfer.0) = 0 then do
@@ -4283,7 +4283,6 @@ Proc_Member_List:
         transfer.fmem = fstate
       end
       when fsel = 'R' then do
-        if fstate = null then
         fstate = 'REMOVE'
         'tbput' ftp_table
         if wordpos(fmem,transfer.0) = 0 then do
@@ -4293,7 +4292,6 @@ Proc_Member_List:
         transfer.fmem = fstate
       end
       when fsel = 'G' then do
-        if fstate = null then
         fstate = 'GET'
         'tbput' ftp_table
         if wordpos(fmem,transfer.0) = 0 then do
@@ -4303,7 +4301,6 @@ Proc_Member_List:
         transfer.fmem = fstate
       end
       when fsel = 'P' then do
-        if fstate = null then
         fstate = 'PUT'
         'tbput' ftp_table
         transfer.fmem = fstate
