@@ -65,6 +65,8 @@
   *                                 - Translate &direct on        *
   *                                   FTPBSITE as miniscule "p"   *
   *                                   is put in LOAD step as-is   *
+  *                                 - Fix issue with multiple     *
+  *                                   ENDIF/multiple delete steps *
   *            02/16/2023  - 2.030  - Fix Sync Get/Put changes    *
   *            02/10/2023  - 2.029  - Correct dates on Sync       *
   *            01/23/2023  - 2.028  - Allow No for NONE on DSS    *
@@ -373,7 +375,7 @@
   end
 
   parse value "" with null loadjcl_dsn_flag password passwvfy ,
-    ddn big_load odyvol odysc odymc shost mems ,
+    ddn big_load odyvol odysc odymc odddsn obpac shost mems ,
     loadjcl_dsn save_port
 
   Address ISPExec
@@ -1046,8 +1048,6 @@ Do_It:
           ftp.nn = "Site" mc sc dsc
           ftp.0 = nn
         end
-        if tsclas = "NONE" & dss = "Yes" then do
-          "Display Panel(ftpsbpac)"
       end
       nn = ftp.0 + 1
       if mvs = "Yes" then do
@@ -2137,6 +2137,11 @@ build_dump:
     end
     nn = nn + 1
     load.nn = "         " sc "- "
+    load.nn = translate(load.nn)
+  end
+  if obpac \= null then do
+    nn = nn + 1
+    load.nn = "          BYPASSACS("obpac") - "
     load.nn = translate(load.nn)
   end
   if odddsn <> null then do
