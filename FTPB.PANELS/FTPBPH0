@@ -56,6 +56,14 @@
 ~    If you want to restore the data set(s) to a specific volume enter
 ~    that volser here.
 ~
+~                           %-- or --~
+~
+%    Data set for OUTDDNAME
+~
+~    If you want to restore the data set(s) to a specific volume, do not
+~    know the volume, but know of a data set that is on the volume,
+~    enter it here.%Volser~and%data set~are mutually exclusive.
+~
 %    Management Class, blank, or NONE
 ~
 ~    If you want to override the existing SMS Management Class or have
@@ -70,6 +78,13 @@
 ~    cause that new Storage class to be used during the restore.  NONE
 ~    may be coded to indicate no Storage class is to be used.
 ~
+%    BYPASSACS mask
+~
+~    If you do not want SMS ACS routines executed during allocation
+~    of the restored data set, enter that mask here. If you have
+~    entered NONE to the Storage Class, you will almost certanly need
+~    to put a value here.%**~(all data sets) usually is sufficient.
+~
 %    Tolerate ENQ Failure on Restore
 ~
 ~    If Yes then an ENQ failure on the Restore will be allowed.
@@ -78,3 +93,6 @@
   .cursor = zcmd
 )PROC
 )END
+/* History                                                                   */
+/*                                                                           */
+/* 03-24-2023  -  2.031  - Added data set name for OUTDDNAME and BYPASSACS.  */

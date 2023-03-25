@@ -37,9 +37,13 @@
 )Proc
   &sp = trans(trunc(&sp,1) B,Blocks b,Blocks T,TRK t,TRK C,CYL c,CYL *,*)
   &rel = trans(trunc(&rel,1) Y,Yes N,No y,Yes n,No *,*)
+  &direct = upper(&direct)
   Ver (&sp,nb,list,Blocks,TRK,CYL)
   Ver (&rel,nb,list,Yes,No)
   ver (&tdclas,name)
   ver (&tmclas,name)
   ver (&tsclas,name)
 )End
+/* History                                                                   */
+/*                                                                           */
+/* 03-24-2023  -  2.031  - Added upper() to direct edit                      */

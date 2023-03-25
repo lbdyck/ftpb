@@ -1,6 +1,51 @@
 This member (new with the 1.195 level) documents the changes from
 prior levels.
 
+03/17/2023  - 2.031  - Add support for specifying BYPASSACS when using
+                       DSS
+                     - Translate &direct on FTPBSITE as miniscule "p" is
+                       put in LOAD step as-is
+
+02/16/2023  - 2.030  - Fix Sync Get/Put changes
+
+02/10/2023  - 2.029  - Correct dates on Sync
+
+01/23/2023  - 2.028  - Allow No for NONE on DSS restore
+
+01/13/2023  - 2.027  - Correct Sync double Ignore
+                     - Correct Sync xfer counter
+                     - Update Sync for NoStats and Not There
+                     - Update Sync dates with .
+                     - Used REXXFORM 3 2 to reflow
+
+01/01/2023  - 2.026  - Restore DELSTEP for Load DD for iebcopy/adrdssu
+                     - Comment DELLOAD DD in Local JCL for DELSTEP for
+                       Restart
+
+01/01/2023  - 2.025  - Add delete step for unload for iebcopy/adrdssu
+                     - Clean up DELSTEP
+
+12/30/2022  - 2.024  - Fix if invalid host and NETRC in use
+
+11/04/2022  - 2.023  - Submit option R added
+                     - Thx to Dana Mitchell for TSS commands to secure
+                       the NETRC dataset
+
+08/19/2022  - 2.022  - Allow user to cancel if to dataset does not
+                       exist.
+
+04/11/2022  - 2.021  - Used EPSV4 with Passive
+                     - Allow Sync display delta
+
+03/21/2022  - 2.020  - Allow multiple Compares on Sync
+                     - Free FTP JCL DD after Sync if noaction
+
+03/17/2022  - 2.019  - Option to unload a PDS FTP
+
+03/03/2022  - 2.018  - Correct sync compare dsn
+
+03/01/2022  - 2.017  - Fix LOAD of PDS missing dir blocks
+
 02/06/2022  - 2.016  - Correct unload space alloc
                      - Correct IF test
                      - Correct BLKSIZE if not sdb

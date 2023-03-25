@@ -1,5 +1,5 @@
-  /* -----------------------  rexx procedure  -------------------- */
-  ftpbver = "2.030"
+  /*%NOCOMMENT -------------  rexx procedure  -------------------- */
+  ftpbver = "2.031"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -44,6 +44,8 @@
   *   John Kalinich  - pds directory read routine in rexx         *
   *                  - ACF2 ACFNRULE for NETRC protection         *
   *                                                               *
+  *   Ray Mullins    - add BYPASSACS support, minor fixes         *
+  *                                                               *
   * Installation customization:                                   *
   *   1. Update the FTPBCUST REXX exec for your installation      *
   *      defaults.                                                *
@@ -58,6 +60,13 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            03/17/2023  - 2.031  - Add support for specifying  *
+  *                                   BYPASSACS when using DSS    *
+  *                                 - Translate &direct on        *
+  *                                   FTPBSITE as miniscule "p"   *
+  *                                   is put in LOAD step as-is   *
+  *                                 - Fix issue with multiple     *
+  *                                   ENDIF/multiple delete steps *
   *            02/16/2023  - 2.030  - Fix Sync Get/Put changes    *
   *            02/10/2023  - 2.029  - Correct dates on Sync       *
   *            01/23/2023  - 2.028  - Allow No for NONE on DSS    *
@@ -366,7 +375,7 @@
   end
 
   parse value "" with null loadjcl_dsn_flag password passwvfy ,
-    ddn big_load odyvol odysc odymc shost mems ,
+    ddn big_load odyvol odysc odymc odddsn obpac shost mems ,
     loadjcl_dsn save_port
 
   Address ISPExec
@@ -1110,6 +1119,7 @@ Do_It:
     if ftpif = 1 then do
       nn = nn + 1
       ftp.nn = "//    ENDIF"
+      ftpif = 0
     end
     nn = nn + 1
     ftp.nn = "//DELSTEP   EXEC PGM=IEFBR14"
@@ -1137,6 +1147,7 @@ Do_It:
     if ftpif = 1 then do
       nn = ftp.0 + 1
       ftp.nn = "//    ENDIF"
+      ftpif = 0
     end
     ftp.0 = nn
   end /* if unload */
@@ -2097,6 +2108,11 @@ build_dump:
   nn = nn + 1
   load.nn = "//          DSN="reload_dsn
   load.nn = translate(load.nn)
+  if odddsn \= null then do
+    nn = nn + 1
+    load.nn = "//HERE      DD  DISP=SHR,DSN="odddsn
+    load.nn = translate(load.nn)
+  end
   nn = nn + 1
   load.nn = "//SYSIN     DD  *"
   nn = nn + 1
@@ -2112,6 +2128,7 @@ build_dump:
     end
     nn = nn + 1
     load.nn = "         " mc "- "
+    load.nn = translate(load.nn)
   end
   if odysc <> null then do
     Select
@@ -2120,10 +2137,21 @@ build_dump:
     end
     nn = nn + 1
     load.nn = "         " sc "- "
+    load.nn = translate(load.nn)
   end
-  if odyvol <> null then do
+  if obpac \= null then do
+    nn = nn + 1
+    load.nn = "          BYPASSACS("obpac") - "
+    load.nn = translate(load.nn)
+  end
+  if odddsn <> null then do
+    nn = nn + 1
+    load.nn = "          OUTDDNAME(HERE) - "
+  end
+  else if odyvol <> null then do
     nn = nn + 1
     load.nn = "          OUTDYNAM("odyvol") - "
+    load.nn = translate(load.nn)
   end
   nn = nn + 1
   load.nn = "          CATALOG - "
