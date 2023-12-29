@@ -13,8 +13,8 @@
 +\-\-%TCP/IP FTP Dialog+\-\#ftpbver+
 %Command ===>_zcmd
 +
-+From  Data Set%===>@sdsname                                                #s1+
-+To    Data Set%===>@tdsname                                                #s2+
++Local  Data Set%=>@sdsname                                                 #s1+
++Remote Data Set%=>@tdsname                                                 #s2+
 +
 +Remote Information:            Direction%===>_z+ %G+Get,%P+Put+or%S+Sync
 + Hostname or ? %===>@thost                                                   +
