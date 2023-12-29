@@ -15,17 +15,19 @@
 +   Remote Work Data Set HLQ%===>$whlq                         + Remote Node
 +                                                                optional
 +   DFSMSdss options:
-+
 +   Exclusive use of data set(s) during unload:       %===>_vex+  Yes or No
-+
 +   Dump All data or only Used data                   %===>_val + All or Used
 +
 +   Optional Restore Options:
 +      Replace Data Set                               %===>_vrp+  Yes or No
-+      Volser                                         %===>$odyvol+
++    * Volser                                         %===>$odyvol+
++    * Data set for OUTDDNAME%===>$odddsn                                      +
 +      Management Class, blank, or NONE               %===>$odymc   +
 +      Storage Class, blank, or NONE                  %===>$odysc   +
++      BYPASSACS mask        %===>$obpac                                       +
 +      Tolerate ENQ Failure on Restore                %===>$otenq   +Yes or No
++
++    * Mutually exclusive
 +
 )INIT
  .cursor = whlq
@@ -35,6 +37,10 @@
  &vrp = trans(trunc(&vrp,1) &z,Yes Y,Yes N,No y,Yes n,No)
  &otenq = trans(trunc(&otenq,1) &z,No Y,Yes N,No y,Yes n,No)
 )PROC
+ &resp = .resp
+ &csr = &z
+ &zedsmsg = &z
+ &zedlmsg = &z
  ver (&whlq,nb,dsname)
  &vex = trans(trunc(&vex,1) Y,Yes N,No y,Yes n,No *,*)
  ver (&vex,nb,list,Yes,No)
@@ -42,8 +48,42 @@
  ver (&val,nb,list,All,Used)
  &vrp = trans(trunc(&vrp,1) Y,Yes N,No y,Yes n,No *,*)
  ver (&vrp,nb,list,Yes,No)
+ ver (&odyvol,ebcdic)
+*rexx (* zedsmsg zedlmsg csr resp)
+  if resp = 'END' then exit
+  if zedsmsg \== '' then exit
+  parse value with zedmsg zedlmsg
+  if wordpos(odyvol, 'MIGRAT PRIVAT SCRTCH') > 0 |,
+   left(odyvol, 1) == 'L' & datatype(substr(odyvol, 2)) == 'NUM' then do
+    zedsmsg = 'Invalid volume.'
+    zedlmsg = 'The volume name is reserved.'
+    csr = 'ODYVOL'
+  end
+*endrexx
+ if (&zedsmsg NE &z)
+   .cursor = &csr
+   .msg = isrz001
+ ver (&odddsn,dsname)
+ if (&obpac NE &z)
+  if (&odyvol NE &z and &odddsn NE &z)
+   &zedsmsg = 'Mutually exclusive.'
+   &zedlmsg = 'ODYNAM and OUTDD options are mutually exclusive. Clear one.'
+   &csr    = 'ODYVOL'
+  else
+   if (&odyvol EQ &z and &odddsn EQ &z)
+    &zedsmsg = 'Specify a target value.'
+    &zedlmsg = 'Specify one of the target volume options.'
+    &csr    = 'ODYVOL'
+ else
+  if (&odyvol NE &z or &odddsn NE &z)
+   &zedsmsg = 'Clear target fields.'
+   &zedlmsg = 'If BYPASSACS is not specified, do not specify a target.'
+   &csr    = 'ODYVOL'
  ver (&odymc,name)
  ver (&odysc,name)
  &otenq = trans(trunc(&otenq,1) Y,Yes N,No y,Yes n,No)
  ver (&otenq,nb,list,Yes,No)
 )END
+/* History                                                                   */
+/*                                                                           */
+/* 03-24-2023  -  2.031  - Added data set name for OUTDDNAME and BYPASSACS.  */

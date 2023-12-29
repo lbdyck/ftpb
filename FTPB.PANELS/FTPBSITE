@@ -2,6 +2,7 @@
 /* + type(text  ) intens(low )                   information only  */
    % type( input) intens(high) caps(on ) just(left )
    _ type( input) intens(high) caps(off) just(left )
+   $ type( input) intens(high) caps(on ) just(left )
    ` type(text) intens(high)  caps(off) just(left ) color(yellow)
    @ type(output) intens(high)  caps(on ) just(left ) color(white)
    ~ type(text) intens(high) color(blue) hilite(reverse)
@@ -19,7 +20,7 @@
 +   Allocation:    _sp     `       Blocks, TRK, or CYL
 +   Primary:       _pri     `      Primary space allocation
 +   Secondary:     _sec     `      Secondary space allocation
-+   Directory:     _direct`        Directory blocks
++   Directory:     $direct`        Directory blocks
 +                                  # for PDS, P for PDSE, or blank for PS
 +Optional:
 +   Device:        %tunit   `      Remote device or esoteric
@@ -43,3 +44,7 @@
   ver (&tmclas,name)
   ver (&tsclas,name)
 )End
+/* History                                                                   */
+/*                                                                           */
+/* 03-25-2023  -  2.031  - Change direct field to caps on                    */
+/* 03-24-2023  -  2.031  - Added upper() to direct edit                      */
