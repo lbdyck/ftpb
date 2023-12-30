@@ -1,10 +1,10 @@
 This member (new with the 1.195 level) documents the changes from
 prior levels.
 
-03/17/2023  - 2.031  - Add support for specifying BYPASSACS when using
-                       DSS
+03/17/2023  - 2.031  - Add support for specifying BYPASSACS when using DSS
                      - Translate &direct on FTPBSITE as miniscule "p" is
                        put in LOAD step as-is
+                     - Fix issue with multiple ENDIF/multiple delete steps
 
 02/16/2023  - 2.030  - Fix Sync Get/Put changes
 
@@ -35,7 +35,8 @@ prior levels.
                        exist.
 
 04/11/2022  - 2.021  - Used EPSV4 with Passive
-                     - Allow Sync display delta
+                     - Allow Sync display delta option on main panel
+                     - Removed 2nd cmds entry field
 
 03/21/2022  - 2.020  - Allow multiple Compares on Sync
                      - Free FTP JCL DD after Sync if noaction
