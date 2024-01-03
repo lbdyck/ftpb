@@ -13,8 +13,8 @@
 +\-\-%TCP/IP FTP Dialog+\-\#ftpbver+
 %Command ===>_zcmd
 +
-+Local  Data Set%=>@sdsname                                                 #s1+
-+Remote Data Set%=>@tdsname                                                 #s2+
++Local  Data Set%=>@ldsname                                                 #s1+
++Remote Data Set%=>@rdsname                                                 #s2+
 +
 +Remote Information:            Direction%===>_z+ %G+Get,%P+Put+or%S+Sync
 + Hostname or ? %===>@thost                                                   +
@@ -36,9 +36,9 @@
 )INIT
  .zvars = '(ftpgp)'
  .help = ftpbh0
- IF (&sdsname = &Z)
-    .cursor = sdsname
- IF (&sdsname NE &Z)
+ IF (&ldsname = &Z)
+    .cursor = ldsname
+ IF (&ldsname NE &Z)
     .cursor = zcmd
  IF (&thport EQ &Z)
     &thport = 21
@@ -58,10 +58,10 @@ ver (&tls,nb,list,Yes,No)
 &psv = trans(trunc(&psv,1) &z,Yes Y,Yes N,No y,Yes,n,No *,*)
 &syd = trans(trunc(&syd,1) &z,Yes Y,Yes N,No y,Yes,n,No *,*)
 ver (&psv,nb,list,Yes,No)
-&egg = trans(&sdsname egg,EGG *,*)
+&egg = trans(&ldsname egg,EGG *,*)
 if (&egg NE EGG)
    if (&zcmd = &z)
-      ver (&sdsname,nb)
+      ver (&ldsname,nb)
       ver (&ftpgp,nb,list,P,G,S)
       ver (&thost,nb)
       if (&usernrc EQ &Z)
@@ -78,15 +78,15 @@ if (&egg NE EGG)
       ver (&bin,nb,list,Yes,No)
       ver (&mvs,nb,list,Yes,No)
  &resp = .resp
-*rexx(* zedsmsg zedlmsg csr resp sdsname tdsname)
+*rexx(* zedsmsg zedlmsg csr resp ldsname rdsname)
   if resp = 'END' then exit
   parse value '' with zedsmsg zedlmsg null
-  if left(sdsname,1) = "'"
-     then if right(sdsname,1) /= "'"
-       then sdsname = sdsname"'"
-  if left(tdsname,1) = "'"
-     then if right(tdsname,1) /= "'"
-       then tdsname = tdsname"'"
+  if left(ldsname,1) = "'"
+     then if right(ldsname,1) /= "'"
+       then ldsname = ldsname"'"
+  if left(rdsname,1) = "'"
+     then if right(rdsname,1) /= "'"
+       then rdsname = rdsname"'"
   if pos(ftpgp,'GS') = 0
   then if mvs /= 'Yes' then do
     zedsmsg = 'Invalid'
@@ -96,19 +96,19 @@ if (&egg NE EGG)
   end
   if zedsmsg = null then
   if ftpgp = 'G' then
-  if pos('*',sdsname) > 0 then do
+  if pos('*',ldsname) > 0 then do
     zedsmsg = 'Invalid'
     zedlmsg = 'An * is not allowed for the From or To Data Set names with' ,
       'a GET direction.'
-      csr = 'SDSNAME'
+      csr = 'LDSNAME'
   end
   if zedsmsg = null then
   if ftpgp = 'G' then
-  if pos('*',tdsname) > 0 then do
+  if pos('*',rdsname) > 0 then do
     zedsmsg = 'Invalid'
     zedlmsg = 'An * is not allowed for the From or To Data Set names with' ,
       'a GET direction.'
-      csr = 'TDSNAME'
+      csr = 'RDSNAME'
   end
   if usernrc /= null then
   if left(usernrc,1) /= "'" then do
@@ -121,11 +121,11 @@ if (&egg NE EGG)
     .MSG = ISRZ001
     .CURSOR = &csr
 )Help
- Field(sdsname)  panel(ftpbhf1)
+ Field(ldsname)  panel(ftpbhf1)
  Field(ftpgp)    panel(ftpbhfd)
  Field(thost)    panel(ftpbhf2)
  Field(thport)   panel(ftpbhf12)
- Field(tdsname)  panel(ftpbhf3)
+ Field(rdsname)  panel(ftpbhf3)
  Field(userid)   panel(ftpbhf4)
  Field(password) panel(ftpbhf5)
  Field(passwvfy) panel(ftpbhf5)
@@ -139,6 +139,8 @@ if (&egg NE EGG)
  Field(post)     panel(ftpbhf10)
  Field(usernrc)  panel(ftpbhf13)
 )Field
- Field(sdsname)  IND(s1) LEN(256)
- Field(tdsname)  IND(s2) LEN(256)
+ Field(ldsname)  IND(s1) LEN(256)
+ Field(rdsname)  IND(s2) LEN(256)
 )END
+/* 2024-01-03  MRM  2.032 Variables sdsname->ldsname, tdsname->rdsname        */
+/*                        From/To nomenclature changed to Local/Remote        */

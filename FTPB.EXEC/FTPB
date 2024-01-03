@@ -1,5 +1,5 @@
   /*%NOCOMMENT -------------  rexx procedure  -------------------- */
-  ftpbver = "2.031"
+  ftpbver = "2.032"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -60,6 +60,21 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/03/2024  - 2.032  - Finish nomenclanture update *
+  *                                   (from->local, to->remote,   *
+  *                                   sdsname->ldsname,           *
+  *                                   tdsname->rdsname)           *
+  *                                 - Correct data set processed  *
+  *                                   in Do_Get                   *
+  *                                 - Cancel request if PF3 used  *
+  *                                   leaving panels FTPBUNLD and *
+  *                                   FTPBGSU                     *
+  *                                 - Set defaults before calling *
+  *                                   FTPBCUST                    *
+  *                                 - Preinitialize some ISPF and *
+  *                                   LISTDSI returned variables  *
+  *                                 - Remove some duplicate       *
+  *                                   statements                  *
   *            03/17/2023  - 2.031  - Add support for specifying  *
   *                                   BYPASSACS when using DSS    *
   *                                 - Translate &direct on        *
@@ -357,6 +372,7 @@
   end
 
   Address ISPEXEC
+  zapplid = null
   "Vget zapplid"
   "Control Errors Return"
   if zapplid <> "FTP" then do
@@ -376,9 +392,20 @@
 
   parse value "" with null loadjcl_dsn_flag password passwvfy ,
     ddn big_load odyvol odysc odymc odddsn obpac shost mems ,
-    loadjcl_dsn save_port
+    loadjcl_dsn save_port ,
+    sysblksize syslrecl sysrecfm sysused sysvolume,
+    zerrmsg zerrsm zerrlm zuser zprefix
 
-  Address ISPExec
+  /* Set defaults before customization */
+  parse value 0 with 1 sdb 1 netrc 1 netrcpre 1 netsec 1 sysftpd 1 savepwd ,
+    1 FirIDwH 1 systcpd 1 nomemopt 1 nodsnopt
+  parse value null with steplib systcpds jc1 jc2 jc3 jc4
+  vio  = "VIO"
+  dasd = "3390"
+  tape = "CART"
+  sysftpds = "TCPIP.FTP.DATA"
+  forcejbn = "Y"
+
   "Select Cmd(ftpbcust)"
   "Vget (sdb vio dasd netrc netsec sysftpd njenode savepwd" ,
     "FirIDwH forcejbn jc1 jc2 jc3 jc4 sysftpds systcpd" ,
@@ -388,11 +415,11 @@
 
   /* -------------------------- *
   * If options is null then    *
-  * set send dsname (sdsname)  *
+  * set send dsname (ldsname)  *
   * -------------------------- */
   if length(options) > 0 then
-  parse value options with sdsname more
-  else sdsname = null
+  parse value options with ldsname more
+  else ldsname = null
 
   /* ----------------------------------------------------- *
   * Test and process any options                          *
@@ -426,7 +453,7 @@
   /* -------------------------- *
   * Add Version to ISPF Pool   *
   * -------------------------- */
-  "Vput (ftpbver sdsname)"
+  "Vput (ftpbver ldsname)"
 
   /* -------------------------- *
   * Get basic information      *
@@ -487,32 +514,32 @@ Start:
     end
 
     save_port = thport
-    if translate(sdsname) = "EGG" then do
+    if translate(ldsname) = "EGG" then do
       Address TSO "%ftpbcrdt"
-      sdsname = null
+      ldsname = null
     end
     else do
       zedsmsg = null
       if ftpgp = 'S' then do /* Sync */
-        if pos('*',sdsname) > 0 then
-        if pos('(',sdsname) = 0 then do
+        if pos('*',ldsname) > 0 then
+        if pos('(',ldsname) = 0 then do
           zedsmsg = 'Invalid'
           zedlmsg = 'Sync is not allowed with a dataset mask.'
           'setmsg msg(isrz001)'
         end
         if zedsmsg = null then do
-          if pos('(',sdsname) > 0
+          if pos('(',ldsname) > 0
           then do
-            p = pos('(',sdsname)
-            parse value sdsname with test_sdsname'('sync_member')' .
-            if left(sdsname,1) = "'"
-            then test_sdsname = test_sdsname"'"
+            p = pos('(',ldsname)
+            parse value ldsname with test_ldsname'('sync_member')' .
+            if left(ldsname,1) = "'"
+            then test_ldsname = test_ldsname"'"
           end
           else do
-            test_sdsname = sdsname
+            test_ldsname = ldsname
             sync_member = null
           end
-          x = listdsi(test_sdsname 'DIR')
+          x = listdsi(test_ldsname 'DIR')
           if sysrecfm = 'U' then do
             zedsmsg = 'Invalid'
             zedlmsg = 'Sync is not allowed for Load Libraries.'
@@ -541,9 +568,9 @@ Start:
   * ---------------------------------------------------------- */
 
 Do_It:
-  if pos("/",sdsname) = 0 then
-  sdsname = translate(sdsname)
-  "Vput (sdsname thost userid bin mvs other usernrc" ,
+  if pos("/",ldsname) = 0 then
+  ldsname = translate(ldsname)
+  "Vput (ldsname thost userid bin mvs other usernrc" ,
     "thport fir tls psv firewall syd post ftpgp) Profile"
 
   /* ------------------------ *
@@ -563,17 +590,17 @@ Do_It:
   if usernrc /= null then do
     x = listdsi(usernrc)
     if pos('(',usernrc) = 0
-    then usernrcl = sysdsname
+    then usernrcl = syldsname
     else do
       parse value usernrc with .'('nrcm')'.
-      usernrcl = sysdsname'('nrcm')'
+      usernrcl = syldsname'('nrcm')'
     end
   end
 
   /* -------------------------- *
   * Clear some variables       *
   * -------------------------- */
-  parse value null with to_mem to_dsn from_dsn sdsnamex tdsnamex ,
+  parse value null with to_mem to_dsn from_dsn ldsnamex rdsnamex ,
     gdg rename multiple sysalloc sysseconds direct sp
 
   /* --------------------------------------------------------- *
@@ -597,17 +624,17 @@ Do_It:
     * or if multiple dsn xfer ?  *
     * -------------------------- */
     Select
-      when left(sdsname,1) = "/" then nop
-      when pos("(",sdsname) > 0 then do
-        parse value sdsname with sdsnamex "(" members ")"
+      when left(ldsname,1) = "/" then nop
+      when pos("(",ldsname) > 0 then do
+        parse value ldsname with ldsnamex "(" members ")"
         Select
           When pos(left(members,1),"-+") > 0 then call get_gdg
           When datatype(members) = "NUM" then call get_gdg
           Otherwise nop
         end
         if gdg = null then
-        if left(sdsnamex,1) = "'" then
-        sdsnamex = sdsnamex"'"
+        if left(ldsnamex,1) = "'" then
+        ldsnamex = ldsnamex"'"
       end
       /* ----------------------------------------------------- *
       * Look for wildcard.                                    *
@@ -615,11 +642,11 @@ Do_It:
       * - if .* then make .** as df/dss requires that for     *
       *   more than a single level                            *
       * ----------------------------------------------------- */
-      when pos("*",sdsname) > 0 then do
-        if left(sdsname,1) = "'" then
-        sdsname = substr(sdsname,2,length(sdsname)-2)
-        if right(sdsname,2) = ".*" then do
-          sdsname = sdsname"*"
+      when pos("*",ldsname) > 0 then do
+        if left(ldsname,1) = "'" then
+        ldsname = substr(ldsname,2,length(ldsname)-2)
+        if right(ldsname,2) = ".*" then do
+          ldsname = ldsname"*"
         end
         multiple = "on"
       end
@@ -629,27 +656,27 @@ Do_It:
     /* -------------------------- *
     * Find remote member ?       *
     * -------------------------- */
-    if length(tdsname) > 0 then tdsnamex = tdsname
-    if pos("(",tdsname) > 0 then do
-      parse value tdsname with tdsnamex "(" to_mem ")"
-      if left(tdsname,1) = "'" then
-      tdsnamex = tdsnamex"'"
+    if length(rdsname) > 0 then rdsnamex = rdsname
+    if pos("(",rdsname) > 0 then do
+      parse value rdsname with rdsnamex "(" to_mem ")"
+      if left(rdsname,1) = "'" then
+      rdsnamex = rdsnamex"'"
     end
 
     /* -------------------------- *
     * Set from dsname var        *
     * -------------------------- */
-    if length(sdsnamex) > 0 then do
-      from_dsn = sdsnamex
+    if length(ldsnamex) > 0 then do
+      from_dsn = ldsnamex
     end
     else do
-      from_dsn = sdsname
-      sdsnamex = sdsname
+      from_dsn = ldsname
+      ldsnamex = ldsname
     end
 
-    if pos("'",sdsnamex) > 0 then
-    if pos("(",sdsnamex) > 0 then do
-      parse value sdsname with "'" from_dsn "(" .
+    if pos("'",ldsnamex) > 0 then
+    if pos("(",ldsnamex) > 0 then do
+      parse value ldsname with "'" from_dsn "(" .
       from_dsn = "'"from_dsn"'"
     end
     Select
@@ -661,33 +688,33 @@ Do_It:
       Otherwise nop
     end
 
-    if length(tdsnamex) > 0 then do
-      to_dsn = tdsnamex
+    if length(rdsnamex) > 0 then do
+      to_dsn = rdsnamex
       rename = "on"
     end
     else if mvs = "Yes" then
     if pos(ftpgp,'GP') > 0 then do
-      tdsnamex = sdsnamex
-      to_dsn   = tdsnamex
-      tdsnamex = tdsnamex
+      rdsnamex = ldsnamex
+      to_dsn   = rdsnamex
+      rdsnamex = rdsnamex
     end
 
-    if pos("'",tdsnamex) > 0 then
-    if pos("(",tdsnamex) > 0 then do
-      parse value tdsnamex with "'" to_dsn "(" to_mem .
+    if pos("'",rdsnamex) > 0 then
+    if pos("(",rdsnamex) > 0 then do
+      parse value rdsnamex with "'" to_dsn "(" to_mem .
       to_dsn = "'"to_dsn"'"
     end
     /* ---- EHA MOD HFS ---- */
     /* no uppercase with translate command */
     /* if HFS file and MVS="yes"           */
-    if substr(tdsnamex,2,1) = '/' then nop
+    if substr(rdsnamex,2,1) = '/' then nop
     else
     do
       /* ---- EHA ------------ */
       if mvs = "Yes" then do
-        if pos("\",tdsnamex) = 0 then
-        if pos("/",tdsnamex) = 0 then do
-          tdsnamex = translate(tdsnamex)
+        if pos("\",rdsnamex) = 0 then
+        if pos("/",rdsnamex) = 0 then do
+          rdsnamex = translate(rdsnamex)
           to_dsn   = translate(to_dsn)
         end
       end   /* EHA ERROR* this end was missing */
@@ -698,14 +725,14 @@ Do_It:
     * Test status of the Local   *
     * data set.                  *
     * -------------------------- */
-    if pos("\",sdsnamex) = 0 then
-    if pos("/",sdsnamex) = 0 then
+    if pos("\",ldsnamex) = 0 then
+    if pos("/",ldsnamex) = 0 then
     if multiple = null then do
       /* ---- EHA ADD HFS ---- */
       /* check if file exist   */
       /* when it is a HFS file */
-      if substr(sdsnamex,2,1) = '/' then do
-        path = sdsnamex
+      if substr(ldsnamex,2,1) = '/' then do
+        path = ldsnamex
         path = STRIP(path,,"'")
         x = syscalls('ON')      /* Z/OS REX/UNIX */
         address syscall
@@ -725,10 +752,12 @@ Do_It:
       end
       /* ---- EHA ------------ */
       else do
-        call listdsi sdsnamex 'dir'
+        call listdsi ldsnamex 'dir'
         sysreason = sysreason /* remove leading zero's */
         if sysreason = 3 then do
-          Address ISPExec "DSInfo Dataset("sdsnamex")"
+          zdstota = 0; zds2ex = 0
+          parse value null with zdsspc zdsdsnt zdsorg
+          Address ISPExec "DSInfo Dataset("ldsnamex")"
           sysalloc   = strip(zdstota)
           sysseconds = strip(zds2ex)
           sp         = translate(left(strip(zdsspc),2))
@@ -749,16 +778,16 @@ Do_It:
         end
         if sysreason = 5 then do
           zedsmsg = "From DSN Error"
-          zedlmsg = "DSN" sdsname ,
+          zedlmsg = "DSN" ldsname ,
             "Invalid dsname or dsname not found"
           "Setmsg Msg(isrz001)"
           return
         end
         if length(members) > 0 then do
-          dsn_stat = sysdsn(sdsnamex)
+          dsn_stat = sysdsn(ldsnamex)
           if dsn_stat <> "OK" then do
             zedsmsg = "From DSN Error"
-            zedlmsg = "DSN:" sdsname dsn_stat
+            zedlmsg = "DSN:" ldsname dsn_stat
             "Setmsg msg(isrz001)"
             return
           end
@@ -876,7 +905,7 @@ Do_It:
   /* ---- EHA ADD HFSX ---- */
   /* modify sysdsorg (listdsi) if HFSX File */
   /* HFSX is to handle HFS files */
-  if substr(sdsnamex,2,1) = '/' then sysdsorg = "HFSX"
+  if substr(ldsnamex,2,1) = '/' then sysdsorg = "HFSX"
   /* ---- EHA ------------ */
 
   /* -------------------------- *
@@ -894,7 +923,7 @@ Do_It:
       if cancel = 1 then call start
       if lrc <> 0 then do
         zedsmsg = null
-        zedlmsg = "No datasets match pattern:" sdsname,
+        zedlmsg = "No datasets match pattern:" ldsname,
           "a dsname pattern must have a valid hlq."
         "Setmsg msg(isrz000)"
         call start
@@ -1079,7 +1108,7 @@ Do_It:
     /* prepare job for HFSX  */
     When sysdsorg = "HFSX" then do
       call set_ftp
-      path = sdsnamex
+      path = ldsnamex
       path = STRIP(path,,"'")
       pos = LASTPOS('/',path)
       pos = pos - 1
@@ -1094,7 +1123,7 @@ Do_It:
     /* ---- EHA ------------ */
     Otherwise do
       zedsmsg = "*Error*"
-      zedlmsg = sdsname "is an unsupported file type",
+      zedlmsg = ldsname "is an unsupported file type",
         "of" sysdsorg
       "Setmsg Msg(isrz001)"
       return
@@ -1208,6 +1237,7 @@ do_local_jcl:
   if rwlj = 0 then return
   if ddn <> null then do
     "LMFree dataid("dataid")"
+    dataid = null
     x=msg("off")
     Address TSO "Free  f("ddn")"
   end
@@ -1250,6 +1280,7 @@ Do_Pds:
   if do_pds_flag = 1 then return
   "Lminit Dataid(dataid) Dataset("from_dsn") Enq(Shr)"
   "Lmopen Dataid("dataid") Option(Input)"
+  zllcmd = null; zlmember = null
   Select
     when pos("*",members) = 0 then
     "Lmmdisp Dataid("dataid") Option(Display)",
@@ -1273,6 +1304,7 @@ Do_Pds:
   "Lmmdisp Dataid("dataid") Option(Free)"
   "Lmclose Dataid("dataid")"
   "Lmfree  Dataid("dataid")"
+  dataid = null
   /* -------------------------- *
   * drop pattern member if > 1 *
   * or replace members w/all   *
@@ -1465,7 +1497,21 @@ Do_Members:
     if unl = "No" then do
       'AddPop Row(5) Column(10)'
       'display panel(ftpbunld)'
+      drc = rc
       'rempop'
+      if drc > 0 then do
+        if drc = 8 then do
+          zedsmsg = 'Canceled.'
+          zedlmsg = 'FTP Sync canceled.'
+          'setmsg msg(isrz001)'
+        end /* if 8 */
+        else do
+          zedsmsg = zerrsm
+          zedlmsg = zerrlm
+        end /* else */
+        mem_err = 3
+        return
+      end /* if drc */
       if ftpbunld = 'Y' then do
         unl = 'Yes'
         ftp.0 = ftpstep - 1
@@ -1515,7 +1561,21 @@ Do_Members:
       then do
         'AddPop Row(5) Column(10)'
         'display panel(ftpbunld)'
+        drc = rc
         'rempop'
+        if drc > 0 then do
+          if drc = 8 then do
+            zedsmsg = 'Canceled.'
+            zedlmsg = 'FTP Sync canceled.'
+            'setmsg msg(isrz001)'
+          end /* if 8 */
+          else do
+            zedsmsg = zerrsm
+            zedlmsg = zerrlm
+          end /* else */
+          mem_err = 3
+          return
+        end /* if drc */
         if ftpbunld = 'Y' then do
           unl = 'Yes'
           ftp.0 = ftpstep - 1
@@ -1563,12 +1623,14 @@ Build_List:
       mem_err = 1
       "Lmclose Dataid("buildid")"
       "Lmfree  Dataid("buildid")"
+      buildid = null
       return
     end
     all_mem = all_mem amem
   end
   "Lmclose Dataid("buildid")"
   "Lmfree  Dataid("buildid")"
+  buildid = null
   return
 
 Set_FTP:
@@ -1853,9 +1915,9 @@ Build_IEBCOPY:
     load.nn = "//          SPACE=("word(space,1)","palloc",RLSE)"
   end
   nn = nn + 1
-  if tdsname /= null
-  then targ_dsn = tdsname
-  else targ_dsn = sdsname
+  if rdsname /= null
+  then targ_dsn = rdsname
+  else targ_dsn = ldsname
   if pos('(*)',targ_dsn) > 0 then do
     parse value targ_dsn with ld'(*)'rd
     targ_dsn = ld''rd
@@ -2055,7 +2117,7 @@ build_dump:
   ftp.nn = "       DATASET(INCLUDE("strip(send_dsn,,"'")"))"
   else do
     if scnt + ecnt = 0 then do
-      ftp.nn = "       DATASET(INCLUDE("strip(sdsname,,"'")"))"
+      ftp.nn = "       DATASET(INCLUDE("strip(ldsname,,"'")"))"
     end
     /* -------------------------- *
     * Process Selected datasets  *
@@ -2082,7 +2144,7 @@ build_dump:
     * -------------------------- */
     if ecnt > 0 then do
       in1 = 0
-      ftp.nn = "       DATASET(INCLUDE("strip(sdsname,,"'")") -"
+      ftp.nn = "       DATASET(INCLUDE("strip(ldsname,,"'")") -"
       if excluded.0 > 0 then do
         do i = 1 to excluded.0
           nn = nn + 1
@@ -2175,20 +2237,20 @@ build_dump:
     else
     rename_dsn = hlq"."targ_dsn
     if multiple = "on" then do
-      load.nn = "          RENAMEU("sdsname", - "
+      load.nn = "          RENAMEU("ldsname", - "
       nn      = nn + 1
-      if left(tdsname,1) = "'" then
-      tdsname = strip(tdsname,,"'")
-      if right(sdsname,2) = '.*'
-      then sdsname = sdsname'*'
-      if right(sdsname,1) = '*' then
+      if left(rdsname,1) = "'" then
+      rdsname = strip(rdsname,,"'")
+      if right(ldsname,2) = '.*'
+      then ldsname = ldsname'*'
+      if right(ldsname,1) = '*' then
       Select
-        When right(tdsname,2) = '.*' then
-        tdsname = tdsname"*"
-        When right(tdsname,3) = '.**' then nop
-        Otherwise tdsname = tdsname'.**'
+        When right(rdsname,2) = '.*' then
+        rdsname = rdsname"*"
+        When right(rdsname,3) = '.**' then nop
+        Otherwise rdsname = rdsname'.**'
       end
-      rt_dsn = translate(strip(tdsname,,"'"))
+      rt_dsn = translate(strip(rdsname,,"'"))
       load.nn = "                  "rt_dsn") -"
     end
     else do
@@ -2276,7 +2338,7 @@ Build_Del_Step:
 Do_Pattern:
   parse value '' with cmdsn cmflag zcmd zsel action cancel
 
-  t_dsn   = strip(sdsname,,"'")
+  t_dsn   = strip(ldsname,,"'")
 
   Address ISPEXEC
   "Lmdinit Listid(ftpb) Level("t_dsn")"
@@ -2286,16 +2348,14 @@ Do_Pattern:
   "TBCreate" tblname "names(zsel cmdsn action zdldsorg zdlsize zdlvol)" ,
     "Write"
 
-  x_rc   = 0
-  scnt   = 0
-  ecnt   = 0
-  t_rc = 0
-  mult_sels = 0
+  parse value 0 with 1 x_rc 1 scnt 1 ecnt 1 t_rc 1 mult_sels ,
+    1 ztdtop
 
   "Control Display Lock"
   "Display Panel(ftpbpdsl)"
 
   do until x_rc > 0
+    zdldsorg = null; zdlvol = null; zdlsize = 0
     "Lmdlist Listid("ftpb") Stats(YES) Dataset(cmdsn) Option(LIST)"
     x_rc = rc
     if x_rc = 0 then do
@@ -2367,6 +2427,7 @@ Do_Pattern:
           if left(zdlvol,6) = "MIGRAT" then
           Address TSO "HRecall '"cmdsn"'"
           if sysreason = 3 then do
+            zdsvol = null
             Address ISPExec "DSInfo Dataset('"cmdsn"')"
             zdlvol = zdsvol
           end
@@ -2578,13 +2639,14 @@ Get_GDG:
   - IBM Global Services - MVS Application Development Support
   */
   "control errors return"
-  "lminit dataset("sdsname") dataid(dataid)"
+  "lminit dataset("ldsname") dataid(dataid)"
   if rc=0 then do
     "lmquery dataid("dataid") ddname(ddname)"
     cc=listdsi(ddname "FILE")
-    realdsn=space(sysdsname)
+    realdsn=space(syldsname)
     "lmfree dataid("dataid")"
-    sdsnamex = "'"realdsn"'"
+    dataid = null
+    ldsnamex = "'"realdsn"'"
   end
   gdg = "on"
   members = null
@@ -2736,6 +2798,7 @@ Do_FTP:
     if rc > 4 then do
       if dataid <> null then do
         "Lmfree  Dataid("dataid")"
+        dataid = null
         call msg("off")
         Address TSO "Free F("ddn")"
         if netrc = 1 then do
@@ -2745,6 +2808,9 @@ Do_FTP:
         end
         call clean_up_submit
       end
+      zedsmsg = 'Canceled.'
+      zedlmsg = 'FTP process canceled.'
+      "Setmsg Msg(isrz001)"
       return
     end
     rwrj = 0
@@ -2826,6 +2892,7 @@ Do_FTP:
           'LMMStats Dataid('pdsegend') Member(local)'
           'edit dataid('pdsegend')'
           'LMFree  Dataid('pdsegend')'
+          pdsegend = null
         end
       end
       When opt = "S" then do
@@ -2857,6 +2924,7 @@ Do_FTP:
 
         Address ISPExec
         "Lmfree  Dataid("dataid")"
+        dataid = null
         if unl <> "No" then do
           "Addpop"
           if dss = "Yes" then
@@ -2917,11 +2985,11 @@ Do_FTP:
           "Lminit Dataid(outid) DDName(Output)"
           "Browse Dataid("outid")"
           "Lmfree  Dataid("outid")"
+          outid = null
           Address TSO "Free F(output)"
           zedsmsg = ""
           zedlmsg = "Foreground FTP Execution Complete."
           "Setmsg Msg(isrz001)"
-          "Lmfree  Dataid("dataid")"
           Address TSO "Free F("ddn")"
           return
         end
@@ -3625,10 +3693,10 @@ Do_FTPx:
   | and the other remote.                                      |
   * ---------------------------------------------------------- */
 Do_Sync:
-  lpds = test_sdsname
-  rpds = tdsname
+  lpds = test_ldsname
+  rpds = rdsname
   if rpds = null then rpds = lpds
-  tdsnamex = rpds
+  rdsnamex = rpds
   x = check_remote_dataset(rpds)
   if x = 4 then do
     zedsmsg = 'Cancelled.'
@@ -3666,7 +3734,7 @@ Do_Sync:
   | datasets to retrieve.                                      |
   * ---------------------------------------------------------- */
 Do_Get:
-  gdsname = strip(sdsname)
+  gdsname = strip(rdsname)
   if left(gdsname,1) = "'" then
   gdsname = strip(gdsname,'B',"'")
   if right(gdsname,3) = '.**' then
@@ -3888,7 +3956,7 @@ Get_Dataset_list:
 
   if get_count > 0 then do
     'vget (mgen) profile'
-    if tdsname /= null then newhlq = tdsname
+    if rdsname /= null then newhlq = rdsname
     if datatype(mgen) /= 'NUM' then mgen = 0
     'Display Panel(ftpbrdsp)'
     'vput (mgen) profile'
@@ -3912,7 +3980,7 @@ Get_Dataset_list:
     gftpc = gftpc + 1
     ftp.gftpc = '/*'
     ftp.0 = gftpc
-    tdsnamex = newhlq
+    rdsnamex = newhlq
     call do_ftp
   end
 
@@ -3924,7 +3992,7 @@ Get_Dataset_list:
   | provided.                                             |
   * ----------------------------------------------------- */
 Fix_Get_DSN:
-  wold = translate(sdsname,' ','.')
+  wold = translate(ldsname,' ','.')
   wnew = translate(newhlq,' ','.')
   wold = words(wold)
   wneww = words(wnew)
@@ -4203,6 +4271,7 @@ Proc_Member_List:
       end
       When abbrev('LOCATE',word(zcmd,1),1) = 1 then do
         fmem = word(zcmd,2)'*'
+        newcrp = 0
         'tbscan' ftp_table 'arglist(fmem) position(newcrp) condlist(ge)'
         if rc > 0 then do
           zedsmsg = 'Not found.'
