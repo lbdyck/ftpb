@@ -5,10 +5,10 @@
   # type(text) intens(high) color(turq) hilite(reverse)
 )Body Window(74,20)
 +
-`To Data Set+
+`Remote Data Set+
 +
 ~This input field is optional and if used defines the new name of the
-~From Data Set. Or for non-z/OS the new file name.
+~Local Data Set. Or for non-z/OS the new file name.
 ~
 ~If the Direction is%Get~then this field may be used to specify the
 ~Local HLQ to use.

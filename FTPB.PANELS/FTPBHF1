@@ -6,7 +6,7 @@
 # type(text) intens(high) color(turq) hilite(reverse)
 )Body Window(71,18)
 +
-`From Data Set+
+`Local Data Set+
 ~
 ~This input field defines the input data set name that will be copied
 ~using FTP from the current system to the defined Remote host.  Or
