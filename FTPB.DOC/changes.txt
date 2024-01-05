@@ -1,6 +1,16 @@
 This member (new with the 1.195 level) documents the changes from
 prior levels.
 
+01/03/2024  - 2.032  - Finish nomenclanture update (from->local,
+                       to->remote, sdsname->ldsname, tdsname->rdsname)
+                     - Correct data set processed in Do_Get
+                     - Cancel request if PF3 used leaving panels
+                       FTPBUNLD and FTPBGSU
+                     - Set defaults before calling FTPBCUST
+                     - Preinitialize some ISPF and LISTDSI returned
+                       variables
+                     - Remove some duplicate statements
+
 03/17/2023  - 2.031  - Add support for specifying BYPASSACS when using DSS
                      - Translate &direct on FTPBSITE as miniscule "p" is
                        put in LOAD step as-is
