@@ -14,6 +14,8 @@
            `which may take some time depending on how generic
            `your selection criteria is.
 
-  `Selection pattern: ~sdsname
+  `Selection pattern: ~ldsname
 )INIT
 )END
+/* 2024-01-03  MRM  2.032 Variables sdsname->ldsname, tdsname->rdsname        */
+/*                        From/To nomenclature changed to Local/Remote        */

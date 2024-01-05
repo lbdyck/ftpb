@@ -11,7 +11,7 @@
 %-/-/- ~FTP Get Dataset Specifications+ -/-/-
 %Command ===>_zcmd
 %
-%Processing remote datasets with hlq of:@sdsname                      +
+%Processing remote datasets with hlq of:@rdsname                      +
 %
 +Local Dataset Options for%Get+processing:
 +
@@ -26,3 +26,5 @@
 )Proc
   ver (&newhlq,nb,dsname)
 )End
+/* 2024-01-03  MRM  2.032 Variables sdsname->ldsname, tdsname->rdsname        */
+/*                        Remote data set reference corrected                 */

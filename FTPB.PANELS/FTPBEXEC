@@ -12,12 +12,14 @@
 +
 +    Your TCP/IP File Transfer is now in progress:
 +
-+    From Data Set: `sdsname
-+    To Data Set:   @tdsnamex
-+    At Host:       @thost
-+    Using Port:    @thport
-+    Using TLS:     @tls
++    Local Data Set:  `ldsname
++    Remote Data Set: @rdsnamex
++    At Host:         @thost
++    Using Port:      @thport
++    Using TLS:       @tls
 +
 +    Started at `zdate    `ztime
 +
 )END
+/* 2024-01-03  MRM  2.032 Variables sdsname->ldsname, tdsname->rdsname        */
+/*                        From/To nomenclature changed to Local/Remote        */
