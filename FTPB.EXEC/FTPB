@@ -1,5 +1,5 @@
   /*%NOCOMMENT -------------  rexx procedure  -------------------- */
-  ftpbver = "2.032"
+  ftpbver = "2.033"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -60,6 +60,7 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            01/16/2024  - 2.033  - Fix overzealous refactor    *
   *            01/03/2024  - 2.032  - Finish nomenclanture update *
   *                                   (from->local, to->remote,   *
   *                                   sdsname->ldsname,           *
@@ -372,7 +373,7 @@
   end
 
   Address ISPEXEC
-  zapplid = null
+  zapplid = ""
   "Vget zapplid"
   "Control Errors Return"
   if zapplid <> "FTP" then do
@@ -588,12 +589,13 @@ Do_It:
   | Fixup the user netrc data set name for JCL use |
   * ---------------------------------------------- */
   if usernrc /= null then do
+    sysdsname = null
     x = listdsi(usernrc)
     if pos('(',usernrc) = 0
-    then usernrcl = syldsname
+    then usernrcl = sysdsname
     else do
       parse value usernrc with .'('nrcm')'.
-      usernrcl = syldsname'('nrcm')'
+      usernrcl = sysdsname'('nrcm')'
     end
   end
 
@@ -2641,9 +2643,10 @@ Get_GDG:
   "control errors return"
   "lminit dataset("ldsname") dataid(dataid)"
   if rc=0 then do
+    ddname = null; sysdsname = null
     "lmquery dataid("dataid") ddname(ddname)"
-    cc=listdsi(ddname "FILE")
-    realdsn=space(syldsname)
+    x = listdsi(ddname "FILE")
+    realdsn=space(sysdsname)
     "lmfree dataid("dataid")"
     dataid = null
     ldsnamex = "'"realdsn"'"
