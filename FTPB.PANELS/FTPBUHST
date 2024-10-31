@@ -14,7 +14,7 @@
 +  Hostname:     `targhost
 +  Port:         `targport+    Default 21
 +  TLS:          `targtls+     Yes or No
-+  Description:  #thdesc                          +
++  Description:  `thdesc                          +
 
   @Review/Update Remote Job Card information:
 
