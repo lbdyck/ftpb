@@ -1,5 +1,5 @@
   /*%NOCOMMENT -------------  rexx procedure  -------------------- */
-  ftpbver = "2.033"
+  ftpbver = "2.034"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -60,6 +60,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            11/09/2024  - 2.034  - Correct Sync test for remote*
+  *                                   dataset                     *
   *            01/16/2024  - 2.033  - Fix overzealous refactor    *
   *            01/03/2024  - 2.032  - Finish nomenclanture update *
   *                                   (from->local, to->remote,   *
@@ -3659,6 +3661,7 @@ Check_Remote:
   call do_ftpx
   Address ISPExec
   do i = 1 to out.0
+    if pos('is not found',out.i) > 0 then return 1
     if pos('No data sets found.',out.i) > 0 then return 1
     if pos('530 You must first login with USER and PASS.',out.i) > 0
     then return 2
@@ -3701,6 +3704,13 @@ Do_Sync:
   if rpds = null then rpds = lpds
   rdsnamex = rpds
   x = check_remote_dataset(rpds)
+  if x = 1 then do
+    zedsmsg = 'Error.'
+    zedlmsg = rpds 'was not found - it may need to be fully qualified' ,
+              'with quotes.'
+    'setmsg msg(isrz001)'
+    return
+  end
   if x = 4 then do
     zedsmsg = 'Cancelled.'
     zedlmsg = 'You have cancelled the FTP request.'
@@ -3811,10 +3821,12 @@ Check_Remote_Dataset:
   arg test_dsn
   new = null
   dln = null
-  x = listdsi(lpds 'dir')
   x = check_remote(test_dsn)
   if x = 1 then new = 'Yes'
   else new = 'No'
+  if ftpgp = 'S'
+     then if x = 1
+     then return 1
   if x = 2 then return 2
   if x = 3 then return 3
   alloc = x

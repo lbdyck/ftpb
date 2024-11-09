@@ -64,12 +64,12 @@ if (&egg NE EGG)
       ver (&ldsname,nb)
       ver (&ftpgp,nb,list,P,G,S)
       ver (&thost,nb)
-      if (&userid NE &Z & &usernrc NE &Z)
-          &zerrsm  = 'Conflict'
-          &zerrlm  = 'Specify only one of Userid/Password or NETRC DSName'
-          &zerralrm = 'YES'
-          &zerrhm = ' '
-         .MSG = ISRZ002
+/*    if (&userid NE &Z & &usernrc NE &Z)
+/*        &zerrsm  = 'Conflict'
+/*        &zerrlm  = 'Specify only one of Userid/Password or NETRC DSName'
+/*        &zerralrm = 'YES'
+/*        &zerrhm = ' '
+/*       .MSG = ISRZ002
       if (&usernrc EQ &Z)
           ver (&userid,nb)
       if (&usernrc NE &Z)
