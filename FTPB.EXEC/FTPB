@@ -3686,7 +3686,7 @@ Do_FTPx:
     'execio * diskw netrc (finis stem netrc.'
   end
   'Alloc f(input) spa(1,1) tr recfm(f b) lrecl(80) blksize(32720) reuse'
-  'Alloc f(output) spa(15,15) tr reuse unit('vio') recfm(f b)'
+  'Alloc f(output) spa(15,15) tr reuse unit('vio') recfm(v b)'
   'Execio * diskw input (finis stem ftpx.'
   call outtrap 'pds.'
   ftphost = thost thport
