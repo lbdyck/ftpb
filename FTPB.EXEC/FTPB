@@ -1,5 +1,5 @@
   /*%NOCOMMENT -------------  rexx procedure  -------------------- */
-  ftpbver = "2.034"
+  ftpbver = "2.035"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -60,6 +60,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            03/29/2025  - 2.035  - Fix NETRC DCB/Unit          *
+  *                                   (thx to Bob Stark           *
   *            11/09/2024  - 2.034  - Correct Sync test for remote*
   *                                   dataset                     *
   *            01/16/2024  - 2.033  - Fix overzealous refactor    *
@@ -3684,7 +3686,7 @@ Do_FTPx:
     'execio * diskw netrc (finis stem netrc.'
   end
   'Alloc f(input) spa(1,1) tr recfm(f b) lrecl(80) blksize(32720) reuse'
-  'Alloc f(output) spa(15,15) tr reuse'
+  'Alloc f(output) spa(15,15) tr reuse unit('vio') recfm(f b)'
   'Execio * diskw input (finis stem ftpx.'
   call outtrap 'pds.'
   ftphost = thost thport
