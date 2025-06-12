@@ -1,5 +1,5 @@
   /*%NOCOMMENT -------------  rexx procedure  -------------------- */
-  ftpbver = "2.036"
+  ftpbver = "2.037"
   /* Name:      FTPB                                               *
   *                                                               *
   * Function:  Generate a Batch TCP/IP FTP Job                    *
@@ -60,6 +60,8 @@
   * Requirements:                                                 *
   *                                                               *
   * History:                                                      *
+  *            06/12/2025  - 2.037  - Remove userid/pw requirement*
+  *                                   on the FTPB panel.          *
   *            03/30/2025  - 2.036  - One more crrection for the  *
   *                                   output dd allocation        *
   *            03/29/2025  - 2.035  - Fix output dd alloc         *
