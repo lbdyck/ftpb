@@ -3648,6 +3648,10 @@ Check_Remote:
   arg test_dsn
   drop ftpx.
   fc = 0
+  if sysftpd then do
+    fc = fc + 1
+    ftpx.fc = copies(' ',80)
+  end
   if translate(psv) = 'YES' then do
     fc = fc + 1
     ftpx.fc = 'locsite fwfriendly epsv4'
@@ -3681,6 +3685,12 @@ Check_Remote:
   * ------------------------------ */
 Do_FTPx:
   Address TSO
+  if sysftpd then
+   do
+    "alloc f(sysftpd) da('"sysftpds"') shr reuse"
+    'alloc f(netrc) dummy'
+   end
+  else
   if usernrc /= null
   then  'Alloc f(netrc) ds('usernrc') shr reuse'
   else do
