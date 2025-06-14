@@ -416,7 +416,7 @@
   forcejbn = "Y"
 
   "Select Cmd(ftpbcust)"
-  "Vget (sdb vio dasd netrc netsec sysftpd njenode savepwd" ,
+  "Vget (sdb vio dasd netrc netsec clntcert sysftpd njenode savepwd" ,
     "FirIDwH forcejbn jc1 jc2 jc3 jc4 sysftpds systcpd" ,
     "systcpds nomemopt nodsnopt tape steplib" ,
     "syd netrcpre)"
@@ -1674,6 +1674,10 @@ Set_FTP:
     nn = nn + 1
     ftp.nn = "//STEPLIB   DD  DISP=SHR,DSN="steplib
   end
+  if clntcert = 1 then do   /* If we claim to have a Client certificate */
+    sysftpd = 1             /* then we must use a SYSFTPD DD            */
+    netrc = 0               /*        and no NETRC file                 */
+  end
   if sysftpd = 1 then do
     nn = nn + 1
     ftp.nn = "//SYSFTPD   DD  DISP=SHR,DSN="sysftpds
@@ -1724,25 +1728,31 @@ Set_FTP:
   nn = nn + 1
   ftp.nn = "//INPUT     DD  *"
 
-  if netrc = 0 then do
-    if fir = 'Yes' then do
-      if FirIDwH = 0 then do
-        nn = nn + 1
-        ftp.nn = userid"@"thost;
+  if clntcert = 0 then do  /* if we have a client certificate don't do this */
+    if netrc = 0 then do
+      if fir = 'Yes' then do
+        if FirIDwH = 0 then do
+          nn = nn + 1
+          ftp.nn = userid"@"thost;
+        end
+        else do
+          nn = nn + 1
+          ftp.nn = thost;
+          nn = nn + 1
+          ftp.nn = userid;
+        end
       end
-      else do
-        nn = nn + 1
-        ftp.nn = thost;
-        nn = nn + 1
-        ftp.nn = userid;
-      end
+      nn = nn + 1
+      ftp_password = left('@',length(password),'@')
+      if fir = "Yes" then
+      ftp.nn = ftp_password
+      else
+      ftp.nn = userid ftp_password
     end
-    nn = nn + 1
-    ftp_password = left('@',length(password),'@')
-    if fir = "Yes" then
-    ftp.nn = ftp_password
-    else
-    ftp.nn = userid ftp_password
+  end
+  else do
+   nn = nn + 1
+   ftp.nn = userid /* if we have a client certificate then do this */
   end
 
   ftp.0 = nn
@@ -2962,8 +2972,11 @@ Do_FTP:
           n = 0
           do i = 1 to in.0
             if left(in.i,1) = "/" then iterate
+            if wordpos(userid,in.i) > 0 then
+             if clntcert = 1 then
+              in.i = ';' userid
             if wordpos(ftp_password,in.i) > 0 then
-            in.i = userid password
+              in.i = userid password
             n = n + 1
             out.n = in.i
           end
@@ -3648,9 +3661,9 @@ Check_Remote:
   arg test_dsn
   drop ftpx.
   fc = 0
-  if sysftpd then do
-    fc = fc + 1
-    ftpx.fc = copies(' ',80)
+  if clntcert = 1 then do
+   fc = fc + 1
+   ftpx.fc = userid
   end
   if translate(psv) = 'YES' then do
     fc = fc + 1
@@ -3685,11 +3698,11 @@ Check_Remote:
   * ------------------------------ */
 Do_FTPx:
   Address TSO
-  if sysftpd then
-   do
-    "alloc f(sysftpd) da('"sysftpds"') shr reuse"
-    'alloc f(netrc) dummy'
-   end
+  if sysftpd then do
+    'alloc f(sysftpd) da('sysftpds') shr reuse'
+    if netrc = 0 then
+      'alloc f(netrc) dummy'
+  end
   else
   if usernrc /= null
   then  'Alloc f(netrc) ds('usernrc') shr reuse'

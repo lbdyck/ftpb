@@ -11,6 +11,7 @@
   * Author:    Lionel B. Dyck                                     *
   *                                                               *
   * History:                                                      *
+  *            06/14/25 - add clntcert option                     *
   *            01/25/21 - Dynamically get ESM for netsec          *
   *            06/28/19 - Used REXXFORM to reflow                 *
   *            04/09/04 - add netrcpre option                     *
@@ -84,6 +85,13 @@
     Otherwise
       netsec = 0   /* No ESM Found */
    end
+  /* -------------------------- *
+  * Client certificate used    *
+  *  to authenticate?          *
+  *     0 = don't use it       *
+  *     1 = use it             *
+  * -------------------------- */
+  clntcert = 1
 
   /* -------------------------- *
   * Set SYSFTPD DD usage       *
@@ -185,7 +193,7 @@
   * --------------------------------------------------------- */
   nodsnopt = 0
 
-  "Vput (sdb vio dasd netrc netsec sysftpd njenode savepwd" ,
+  "Vput (sdb vio dasd netrc netsec clntcert sysftpd njenode savepwd" ,
     "FirIDwH forcejbn jc1 jc2 jc3 tape sysftpds netrcpre" ,
     "systcpd systcpds nomemopt nodsnopt steplib ) "
   Address TSO

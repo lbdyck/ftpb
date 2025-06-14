@@ -73,9 +73,11 @@ if (&egg NE EGG)
       ver (&bin,nb,list,Yes,No)
       ver (&mvs,nb,list,Yes,No)
  &resp = .resp
-*rexx(* zedsmsg zedlmsg csr resp ldsname rdsname)
+*rexx(* zedsmsg zedlmsg csr resp ldsname rdsname userid)
   if resp = 'END' then exit
   parse value '' with zedsmsg zedlmsg null
+  if userid = null then
+   userid = userid()
   if left(ldsname,1) = "'"
      then if right(ldsname,1) /= "'"
        then ldsname = ldsname"'"
