@@ -1,6 +1,16 @@
 This member (new with the 1.195 level) documents the changes from
 prior levels.
 
+07/14/2026  - 2.037  - Ray Mullins Ignore members with invalid names
+
+03/30/2025  - 2.036  - One more crrection for the output dd allocation
+
+03/29/2025  - 2.035  - Fix output dd alloc (thx to Bob Stark
+
+11/09/2024  - 2.034  - Correct Sync test for remote dataset
+
+01/16/2024  - 2.033  - Fix overzealous refactor
+
 01/03/2024  - 2.032  - Finish nomenclanture update (from->local,
                        to->remote, sdsname->ldsname, tdsname->rdsname)
                      - Correct data set processed in Do_Get
