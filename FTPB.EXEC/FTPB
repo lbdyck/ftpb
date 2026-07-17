@@ -4061,7 +4061,7 @@ Get_Member_Lists:
   drop mem.
   mem. = null
 
-  valid_member = "$#@ABCDEFGHIJKLMNOPQRSTUVWXYZ"'C0'X
+  valid_member = "$#@ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"'C0'X
   /* Process remote PDS directory from FTP Log */
   do i = 1 to out.0
     if pos('VV.MM',out.i) > 0 then leave
